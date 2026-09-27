@@ -174,7 +174,7 @@ decodeToken = async (
 
 
   createCredentials = (
-    user: HydratedDocument<IUser>
+    user: HydratedDocument<IUser> 
   ): Credentials => {
     const jti = randomUUID();
 

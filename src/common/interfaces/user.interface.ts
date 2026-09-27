@@ -30,4 +30,5 @@ export interface IUser {
   createdAt?: Date;
   updatedAt?: Date;
   version?: number;
+  full_name?:string;
 }
