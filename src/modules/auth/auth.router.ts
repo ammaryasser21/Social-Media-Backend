@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { confirmEmail, forgotPasswordLink, forgotPasswordOtp, login, loginGoogle, logoutUser, refreshToken, resendConfirmEmail, resetPasswordLink, resetPasswordOtp, signUp, simulateFrontendGoogle, updatePassword, verifyForgetPasswordOtp } from "./auth.controller";
 import { validation } from "../../middleware/";
-import { loginSchema, signUpSchema } from "./auth.validation";
+import { confirmSchema, forgotPasswordSchema, googleLoginSchema, loginSchema, resendConfirmSchema, resetPasswordLinkSchema, resetPasswordOtpSchema, signUpSchema, updatePasswordSchema, verifyForgotPasswordSchema } from "./auth.validation";
 import { auth, authorize } from "../../middleware/auth.middlware";
 import { Roles } from "../../common/enums/roles";
 
@@ -36,44 +36,44 @@ authRouter.post("/refresh",
 );
 
 authRouter.patch("/confirm-email",
-//   validate(confirmSchema),
+validation(confirmSchema),
   confirmEmail
 );
 
 authRouter.patch("/resend-confirm-email",
-//   validate(resendConfirmSchema),
+validation(resendConfirmSchema),
   resendConfirmEmail
 );
 
 authRouter.post("/forgot-password/otp",
-//   validate(forgotPasswordSchema),
+validation(forgotPasswordSchema),
   forgotPasswordOtp
 );
 
 authRouter.post("/verify-forgot-password/otp",
-//   validate(verifyForgotPasswordSchema),
+validation(verifyForgotPasswordSchema),
   verifyForgetPasswordOtp
 );
 
 authRouter.post("/reset-password/otp",
-//   validate(resetPasswordOtpSchema),
+validation(resetPasswordOtpSchema),
   resetPasswordOtp
 );
 
 authRouter.post("/forgot-password/link",
-//   validate(forgotPasswordSchema),
+validation(forgotPasswordSchema),
   forgotPasswordLink
 );
 
 authRouter.post("/reset-password/link",
-//   validate(resetPasswordLinkSchema),
+validation(resetPasswordLinkSchema),
   resetPasswordLink
 );
 
 authRouter.patch("/update-password",
   auth,
   authorize(Roles.USER),
-//   validate(updatePasswordSchema),
+validation(updatePasswordSchema),
   updatePassword
 );
 
@@ -83,7 +83,7 @@ authRouter.get("/google",
 );
 
 authRouter.get("/google/callback",
-//   validate(googleLoginSchema),
+validation(googleLoginSchema),
   loginGoogle
 );
 

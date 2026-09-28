@@ -1,29 +1,62 @@
-import { email } from 'zod';
-import { redisService, RedisServiceType } from './../../common/services/redis.repository';
-import { BadRequestResponse, ErrorResponse, NotFoundResponse, successResponse, UnauthorizedResponse } from '../../common/response';
+import { 
+  redisService, 
+  RedisServiceType 
+} from './../../common/services/redis.repository';
+
+import { 
+  BadRequestResponse, 
+  NotFoundResponse, 
+  successResponse, 
+  UnauthorizedResponse 
+} from '../../common/response';
+
 import { otpEmail } from '../../common/templates/emails/otp';
 import emailEmitter from '../../common/utils/emails/email-event';
 import { sendEmail } from '../../common/utils/emails/mail';
-import { decrypt, encrypt } from '../../common/utils/security/encrypt';
-import { compareHash, hashToken, hashValue } from '../../common/utils/security/hash';
+import { encrypt } from '../../common/utils/security/encrypt';
+
+import { 
+  compareHash, 
+  hashToken, 
+  hashValue 
+} from '../../common/utils/security/hash';
+
 import { UserHydrated } from '../../db/models/user.model';
 import { UserRepositry } from '../../db/repo/user.repositry';
-import { Ilogin, ISignUp } from "./auth.dto";
+
+import { 
+  Ilogin, 
+  ISignUp 
+} from "./auth.dto";
+
 import { generateOtp } from '../../common/utils/security/generate-otp';
-import { tokenService, TokenServiceType } from '../../common/services/token.service';
-import { ConfirmEmailType, PasswordType } from '../../common/interfaces/user-service.interface';
+
+import { 
+  tokenService, 
+  TokenServiceType 
+} from '../../common/services/token.service';
+
+import { 
+  ConfirmEmailType, 
+  PasswordType 
+} from '../../common/interfaces/user-service.interface';
+
 import { System } from '../../common/enums/system';
 import { passwordChangedEmail } from '../../common/templates/emails/password-changed';
 import generateResetToken from '../../common/utils/security/generate-reset-token';
-import { IUser } from '../../common/interfaces/user.interface';
-import StatusCodes from '../../common/enums/status';
 import { config } from 'dotenv';
 import axios from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import { tokenTypes } from '../../common/enums/token';
 import { resetPasswordEmail } from '../../common/templates/emails/reset-password';
-import { Request } from 'express';
+
+import { 
+  Request, 
+  Response 
+} from 'express';
+
 import { JwtPayload } from 'jsonwebtoken';
+import StatusCodes from '../../common/enums/status';
 
 class AuthService {
   private userRepo: UserRepositry;
@@ -32,6 +65,7 @@ class AuthService {
   private CLIENT_ID: string;
   private REDIRECT_URI: string;
   private CLIENT_SECRET: string;
+
   constructor() {
     config();
     this.userRepo = new UserRepositry();
@@ -42,11 +76,20 @@ class AuthService {
     this.CLIENT_SECRET = process.env.CLIENT_SECRET ?? "";
   }
 
+  // ======================================================
+  // LOGIN USER
+  // ======================================================
+
   async login(data: Ilogin) {
     const {
       email,
       password
     } = data;
+
+    if (
+      !email ||
+      !password
+    ) throw new BadRequestResponse("Please fill all fields");
 
     const user = await this.userRepo.findOne({
       filter: { email },
@@ -65,7 +108,7 @@ class AuthService {
     const {
       accessToken,
       refreshToken
-    } = await this.tokenService.createCredentials(user as UserHydrated);
+    } = this.tokenService.createCredentials(user as UserHydrated);
 
     return {
       accessToken,
@@ -73,12 +116,23 @@ class AuthService {
     };
   }
 
+
+  // ======================================================
+  // CREATE USER
+  // ======================================================
+
   async signUp(data: ISignUp) {
     const {
       email,
       password,
       phone
     } = data;
+
+    if (
+      !email ||
+      !password ||
+      !phone
+    ) throw new BadRequestResponse("Please fill all fields");
 
     const existUser: UserHydrated | null = await this.userRepo.findOne({
       filter: { email }
@@ -88,7 +142,7 @@ class AuthService {
 
     data.password = await hashValue(password);
 
-    if (phone) data.phone = encrypt(phone);
+    data.phone = encrypt(phone);
 
     const user = await this.userRepo.create({ data });
 
@@ -162,7 +216,7 @@ class AuthService {
   // RESEND CONFIRM EMAIL
   // ======================================================
 
-  async resendConfirmEmail(data:{email:string}) {
+  async resendConfirmEmail(data: { email: string }) {
     const { email } = data;
 
     const user = await this.userRepo.findOne({
@@ -219,7 +273,7 @@ class AuthService {
   // FORGET PASSWORD WITH OTP
   // ======================================================
 
-  async forgotPasswordOtp(data:{email:string}) {
+  async forgotPasswordOtp(data: { email: string }) {
     const { email } = data;
 
     const user = await this.userRepo.findOne({
@@ -259,7 +313,7 @@ class AuthService {
       ttl: 60 * 5
     })
 
-    emailEmitter.emit("sendEmail", async ()=>{
+    emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
         to: email,
         subject: "Reset your password",
@@ -332,7 +386,7 @@ class AuthService {
   // RESET PASSWORD WITH OTP
   // ======================================================
 
-  async resetPasswordOtp(data:  ConfirmEmailType & {password:string}) {
+  async resetPasswordOtp(data: ConfirmEmailType & { password: string }) {
     const {
       email,
       otp,
@@ -363,7 +417,7 @@ class AuthService {
       key: this.redisService.prefixTokenKey({ userId: String(user._id) }),
     });
 
-    emailEmitter.emit("sendEmail", async ()=>{
+    emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
         to: email,
         subject: "Password changed",
@@ -380,16 +434,19 @@ class AuthService {
   // FORGET PASSWORD WITH LINK
   // ======================================================
 
-  async forgotPasswordLink(data: {email:string}) {
+  async forgotPasswordLink(data: { email: string }, res: Response) {
     const { email } = data;
 
     const user = await this.userRepo.findOne({
       filter: { email }
     });
 
-    // Prevent email enumeration
     if (!user) {
-      return;
+      return successResponse({
+        res,
+        message: "If this email exists, a password reset link has been sent",
+        status: StatusCodes.SUCCESS.OK,
+      });
     }
 
     if (user.provider === System.GMAIL) {
@@ -414,7 +471,7 @@ class AuthService {
     // Send raw token to user
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    emailEmitter.emit("sendEmail", async ()=>{
+    emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
         to: email,
         subject: "Reset your password",
@@ -433,7 +490,7 @@ class AuthService {
   // RESET PASSWORD WITH LINK
   // ======================================================
 
-  async resetPasswordLink(data:{token:string,password:string}) {
+  async resetPasswordLink(data: { token: string, password: string }) {
     const {
       token,
       password
@@ -483,7 +540,7 @@ class AuthService {
       key: this.redisService.prefixTokenKey({ userId: String(user._id) }),
     });
 
-    emailEmitter.emit("sendEmail", async ()=>{
+    emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
         to: email as string,
         subject: "Password changed",
@@ -509,7 +566,6 @@ class AuthService {
     const { id, password } = user;
     const oldPasswords = user.oldPasswords ?? [];
 
-    //verify old password
     if (!(await compareHash(oldPassword, password as string))) {
       throw new BadRequestResponse("Invalid old password");
     }
@@ -543,7 +599,7 @@ class AuthService {
   // Simulate frontend redirect to Google OAuth2.0 login page
   // ======================================================
 
-  async simulateFrontendGoogle(){
+  async simulateFrontendGoogle() {
     const url =
       "https://accounts.google.com/o/oauth2/v2/auth" +
       `?client_id=${this.CLIENT_ID}` +
@@ -559,7 +615,7 @@ class AuthService {
   // LOGIN WITH GOOGLE
   // ======================================================
 
-  async loginGoogle(data: {code:number}) {
+  async loginGoogle(data: { code: number }) {
     const { code } = data;
     if (!code) throw new BadRequestResponse("Code is required");
 
@@ -578,24 +634,24 @@ class AuthService {
     const client = new OAuth2Client(this.CLIENT_ID);
     const ticket = await client.verifyIdToken({
       idToken: id_token,
-      audience: this.CLIENT_ID  ,
+      audience: this.CLIENT_ID,
     });
 
     const payload = await ticket.getPayload();
     let accessToken, refreshToken;
     if (payload && payload.email_verified) {
       let user = await this.userRepo.findOne({
-        filter:{ email: payload.email ?? "" }
-    });
+        filter: { email: payload.email ?? "" }
+      });
       if (!user) {
-        user = await  this.userRepo.create({
-          data:{
+        user = await this.userRepo.create({
+          data: {
             first_name: payload.given_name ?? "",
             last_name: payload.family_name ?? "",
             email: payload.email ?? "",
             provider: System.GMAIL,
           }
-      });
+        });
       }
 
       ({ accessToken, refreshToken } = this.tokenService.createCredentials(user));
@@ -618,7 +674,7 @@ class AuthService {
 
     let createTokenTime = data.decoded.iat
     let uniqueTokenSigniture = data.decoded.jti;
-        const expireAccessTime = 60;
+    const expireAccessTime = 60;
     const expireTime = (createTokenTime + 60 * expireAccessTime) * 1000;
 
 
@@ -631,8 +687,8 @@ class AuthService {
 
     const user = await this.userRepo.findOne({
 
-      filter:{ _id: decoded.payload.id }
-  })
+      filter: { _id: decoded.payload.id }
+    })
     if (!user) throw new NotFoundResponse("User not found");
 
     await this.redisService.setToken({
@@ -665,17 +721,17 @@ class AuthService {
 
     if (flag === "All") {
       await this.userRepo.updateOne({
-       filter: { _id: userId },
-        update:{
+        filter: { _id: userId },
+        update: {
           $set: {
             changeCredentials: new Date()
           }
         }
-    })
+      })
 
       user = await this.userRepo.findOne({
-        filter:{ _id: userId }
-    })
+        filter: { _id: userId }
+      })
 
       await this.redisService.deleteAllTokens({
         userId
