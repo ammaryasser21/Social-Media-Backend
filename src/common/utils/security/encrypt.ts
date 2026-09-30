@@ -9,8 +9,19 @@ const IV_LENGTH = 16;
 
 const encryptionKey = process.env.ENCRYPTION_KEY;
 
-const KEY: Buffer = Buffer.from(encryptionKey as string, "hex");
+if (!encryptionKey) {
+    throw new Error(
+        "ENCRYPTION_KEY is missing from environment variables"
+    );
+}
 
+const KEY = Buffer.from(encryptionKey, "hex");
+
+if (KEY.length !== 32) {
+    throw new Error(
+        "ENCRYPTION_KEY must contain exactly 32 bytes (64 hex characters)"
+    );
+}
 
 export const encrypt = (text: string): string => {
   const iv: Buffer = crypto.randomBytes(IV_LENGTH);
@@ -34,24 +45,31 @@ export const encrypt = (text: string): string => {
 
 
 export const decrypt = (encryptedText: string): string => {
-  const [ivHex, encrypted] = encryptedText.split(":");
+    const [ivHex, encrypted] = encryptedText.split(":");
 
+    if (!ivHex || !encrypted) {
+        throw new Error("Invalid encrypted value");
+    }
 
-  const iv: Buffer = Buffer.from(ivHex as string, "hex");
+    const iv = Buffer.from(ivHex, "hex");
 
-  const decipher = crypto.createDecipheriv(
-    ALGORITHM,
-    KEY,
-    iv
-  );
+    if (iv.length !== IV_LENGTH) {
+        throw new Error("Invalid encryption IV");
+    }
 
-  let decrypted: string = decipher.update(
-    encrypted as string,
-    "hex",
-    "utf8"
-  );
+    const decipher = crypto.createDecipheriv(
+        ALGORITHM,
+        KEY,
+        iv
+    );
 
-  decrypted += decipher.final("utf8");
+    let decrypted = decipher.update(
+        encrypted,
+        "hex",
+        "utf8"
+    );
 
-  return decrypted;
+    decrypted += decipher.final("utf8");
+
+    return decrypted;
 };

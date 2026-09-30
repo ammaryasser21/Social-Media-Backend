@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -34,7 +35,9 @@ const ensureDirectory = (folder: string): string => {
 const defaultFileName = (
     file: Express.Multer.File
 ): string => {
-    return `${file.fieldname}-${Date.now()}-${file.originalname}`;
+    const extension = path.extname(file.originalname).toLowerCase();
+
+    return `${file.fieldname}-${Date.now()}-${crypto.randomUUID()}${extension}`;
 };
 
 

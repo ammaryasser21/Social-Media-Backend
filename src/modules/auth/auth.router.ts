@@ -18,63 +18,69 @@ xRouter.<method>("Endpoint",
 */
 
 authRouter.post(
-    "/signup",
-    validation(signUpSchema),
-    signUp
+  "/signup",
+  validation(signUpSchema),
+  signUp
 )
 
 authRouter.post(
-    "/login",
-    validation(loginSchema),
-    login
+  "/login",
+  validation(loginSchema),
+  login
 );
 
 
 authRouter.post("/refresh",
-  auth,
   refreshToken
 );
 
 authRouter.patch("/confirm-email",
-validation(confirmSchema),
+  validation(confirmSchema),
   confirmEmail
 );
 
 authRouter.patch("/resend-confirm-email",
-validation(resendConfirmSchema),
+  validation(resendConfirmSchema),
   resendConfirmEmail
 );
 
 authRouter.post("/forgot-password/otp",
-validation(forgotPasswordSchema),
+  validation(forgotPasswordSchema),
   forgotPasswordOtp
 );
 
 authRouter.post("/verify-forgot-password/otp",
-validation(verifyForgotPasswordSchema),
+  validation(verifyForgotPasswordSchema),
   verifyForgetPasswordOtp
 );
 
 authRouter.post("/reset-password/otp",
-validation(resetPasswordOtpSchema),
+  validation(resetPasswordOtpSchema),
   resetPasswordOtp
 );
 
 authRouter.post("/forgot-password/link",
-validation(forgotPasswordSchema),
+  validation(forgotPasswordSchema),
   forgotPasswordLink
 );
 
 authRouter.post("/reset-password/link",
-validation(resetPasswordLinkSchema),
+  validation(resetPasswordLinkSchema),
   resetPasswordLink
 );
 
-authRouter.patch("/update-password",
+authRouter.patch(
+  "/update-password",
   auth,
   authorize(Roles.USER),
-validation(updatePasswordSchema),
+  validation(updatePasswordSchema),
   updatePassword
+);
+
+authRouter.patch(
+  "/logout",
+  auth,
+  logoutUser
 );
 
 //Simulate frontend redirect to Google OAuth2.0 login page
@@ -83,13 +89,9 @@ authRouter.get("/google",
 );
 
 authRouter.get("/google/callback",
-validation(googleLoginSchema),
+  validation(googleLoginSchema),
   loginGoogle
 );
 
-authRouter.patch("/logout",
-  auth,
-  logoutUser
-);
 
 export default authRouter;

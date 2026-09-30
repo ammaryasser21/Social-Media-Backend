@@ -1,3 +1,5 @@
-export const generateOtp = async () => {
-    return JSON.stringify(Math.floor(900000 * Math.random()) + 100000);
-}
+import { randomInt } from "node:crypto";
+
+export const generateOtp = (): string => {
+    return String(randomInt(100000, 1000000));
+};

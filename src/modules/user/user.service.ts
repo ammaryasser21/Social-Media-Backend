@@ -17,11 +17,6 @@ class UserService {
         this.tokenService = tokenService;
     }
 
-    getUser(data: IUser): IUser {
-        if (data.phone) data.phone = decrypt(data.phone);
-        return data;
-    }
-
     async updateUserImg(
         file: Express.Multer.File | undefined,
         user: UserHydrated

@@ -18,15 +18,18 @@ import { redisService } from "../common/services/redis.repository";
 const redisStore: Store = {
 
     async increment(key: string): Promise<IncrementResponse> {
+        const windowSeconds = 60;
 
-        const totalHits = await redisService.incr({ key });
+        const totalHits = await redisService.incrWithExpire({
+            key,
+            ttl: windowSeconds,
+        });
 
         return {
             totalHits,
-            resetTime: new Date(Date.now() + 60 * 1000),
+            resetTime: new Date(Date.now() + windowSeconds * 1000),
         };
     },
-
 
     async decrement(key: string): Promise<void> {
 
@@ -54,7 +57,8 @@ export const limiter = rateLimit({
 
         const countryCode = geoip.lookup(req.ip ?? "")?.country;
 
-        return countryCode === "EG" ? 5 : 0;
+        // return countryCode === "EG" ? 5 : 0;
+        return 5;
     },
 
 
@@ -68,14 +72,11 @@ export const limiter = rateLimit({
 
 
     handler: (req, res) => {
-
-        // Client can retry after 60 seconds
         res.set("Retry-After", "60");
 
-        return successResponse({
-            res,
+        return res.status(StatusCodes.CLIENT_ERROR.TOO_MANY_REQUESTS).json({
+            success: false,
             message: "Too many requests, try again after 1 minute",
-            status: StatusCodes.CLIENT_ERROR.TOO_MANY_REQUESTS,
         });
     },
 

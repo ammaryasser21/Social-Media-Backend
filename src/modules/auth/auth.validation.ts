@@ -15,20 +15,39 @@ export const loginSchema = {
 
 
 export const signUpSchema = {
-  body: loginSchema.body.safeExtend({
-    username: z
-      .string()
-      .optional(),
+    body: z
+        .strictObject({
+            first_name: z
+                .string()
+                .trim()
+                .min(3)
+                .max(20),
 
-    age: z
-      .int()
-      .gte(18)
-      .lte(60),
+            last_name: z
+                .string()
+                .trim()
+                .min(3)
+                .max(20),
 
-    phone: z
-      .string()
-      .optional(),
-  }),
+            email: emailSchema,
+
+            password: generalSchema.password,
+
+            confirmPassword: generalSchema.confirmPassword,
+
+            phone: generalSchema.phone,
+
+            age: generalSchema.age,
+        })
+        .superRefine((data, ctx) => {
+            if (data.password !== data.confirmPassword) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["confirmPassword"],
+                    message: "Passwords do not match",
+                });
+            }
+        }),
 };
 
 
@@ -41,10 +60,9 @@ export const confirmSchema = {
 
 
 export const resendConfirmSchema = {
-  body: z.strictObject({
-    email: emailSchema,
-    otp: otpSchema,
-  }),
+    body: z.strictObject({
+        email: emailSchema,
+    }),
 };
 
 

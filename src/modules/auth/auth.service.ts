@@ -1,13 +1,13 @@
-import { 
-  redisService, 
-  RedisServiceType 
+import {
+  redisService,
+  RedisServiceType
 } from './../../common/services/redis.repository';
 
-import { 
-  BadRequestResponse, 
-  NotFoundResponse, 
-  successResponse, 
-  UnauthorizedResponse 
+import {
+  BadRequestResponse,
+  NotFoundResponse,
+  successResponse,
+  UnauthorizedResponse
 } from '../../common/response';
 
 import { otpEmail } from '../../common/templates/emails/otp';
@@ -15,30 +15,31 @@ import emailEmitter from '../../common/utils/emails/email-event';
 import { sendEmail } from '../../common/utils/emails/mail';
 import { encrypt } from '../../common/utils/security/encrypt';
 
-import { 
-  compareHash, 
-  hashToken, 
-  hashValue 
+import {
+  compareHash,
+  hashToken,
+  hashValue
 } from '../../common/utils/security/hash';
 
 import { UserHydrated } from '../../db/models/user.model';
 import { UserRepositry } from '../../db/repo/user.repositry';
 
-import { 
-  Ilogin, 
-  ISignUp 
+import {
+  IgoogleLogin,
+  Ilogin,
+  ISignUp
 } from "./auth.dto";
 
 import { generateOtp } from '../../common/utils/security/generate-otp';
 
-import { 
-  tokenService, 
-  TokenServiceType 
+import {
+  tokenService,
+  TokenServiceType
 } from '../../common/services/token.service';
 
-import { 
-  ConfirmEmailType, 
-  PasswordType 
+import {
+  ConfirmEmailType,
+  PasswordType
 } from '../../common/interfaces/user-service.interface';
 
 import { System } from '../../common/enums/system';
@@ -49,9 +50,9 @@ import { OAuth2Client } from 'google-auth-library';
 import { tokenTypes } from '../../common/enums/token';
 import { resetPasswordEmail } from '../../common/templates/emails/reset-password';
 
-import { 
-  Request, 
-  Response 
+import {
+  Request,
+  Response
 } from 'express';
 
 import { JwtPayload } from 'jsonwebtoken';
@@ -91,9 +92,16 @@ class AuthService {
 
     const user = await this.userRepo.findOne({
       filter: { email },
+      projection: {
+        password: 1,
+        email: 1,
+        role: 1,
+        confirmEmail: 1,
+        is_active: 1,
+      },
       options: {
-        lean: true
-      }
+        lean: true,
+      },
     });
 
     if (!user) throw new BadRequestResponse("Invalid email or password");
@@ -123,53 +131,55 @@ class AuthService {
     const {
       email,
       password,
-      phone
+      phone,
     } = data;
 
-    if (
-      !email ||
-      !password ||
-      !phone
-    ) throw new BadRequestResponse("Please fill all fields");
-
-    const existUser: UserHydrated | null = await this.userRepo.findOne({
-      filter: { email }
+    const existUser = await this.userRepo.findOne({
+      filter: { email },
     });
 
-    if (existUser) throw new BadRequestResponse("This email already existed");
+    if (existUser) {
+      throw new BadRequestResponse(
+        "This email already exists"
+      );
+    }
 
     data.password = await hashValue(password);
-
     data.phone = encrypt(phone);
 
-    const user = await this.userRepo.create({ data });
+    const user = await this.userRepo.create({
+      data,
+    });
 
-    let otp = await generateOtp();
-
+    const otp = await generateOtp();
     const hashedOtp = await hashValue(otp);
 
     await this.redisService.set({
       key: this.redisService.otpKey({ email }),
       value: hashedOtp,
-      ttl: 120
+      ttl: 120,
     });
 
-    emailEmitter.emit("sendEmail", async () => {
-      await sendEmail({
+    await this.redisService.set({
+      key: this.redisService.otpCountKey({ email }),
+      value: 1,
+      ttl: 60 * 5,
+    });
+
+    emailEmitter.emit("sendEmail", () => {
+      void sendEmail({
         to: email,
         subject: "Confirm email",
         html: otpEmail({
           name: user.first_name,
           otp,
           title: "Confirm email otp",
-          expiresIn: "2 minutes"
-        })
-      });
-    })
+          expiresIn: "2 minutes",
+        }),
+      }).catch(console.error);
+    });
 
-    return {
-      user
-    };
+    return { user };
   }
 
   // ======================================================
@@ -226,15 +236,24 @@ class AuthService {
     if (!user) throw new NotFoundResponse("User not found");
 
     const ttl = await this.redisService.ttl({
-      key: this.redisService.otpKey({ email })
+      key: this.redisService.otpKey({ email }),
     });
-    if (ttl) throw new BadRequestResponse("OTP still valid");
 
-    const otpCount = await this.redisService.get({
-      key: this.redisService.otpCountKey({ email })
-    })
-    if (otpCount as number > 3) throw new BadRequestResponse("You reach your limit, try after 5 minutes");
+    if (ttl > 0) {
+      throw new BadRequestResponse("OTP still valid");
+    }
 
+    const otpCount = Number(
+      await this.redisService.get({
+        key: this.redisService.otpCountKey({ email }),
+      }) ?? 0
+    );
+
+    if (otpCount >= 3) {
+      throw new BadRequestResponse(
+        "You reached your limit, try again after 5 minutes"
+      );
+    }
     const otp = await generateOtp();
     const hashedOtp = await hashValue(otp);
 
@@ -245,11 +264,20 @@ class AuthService {
     });
 
     //for limit user requests
-    await this.redisService.set({
+    const newCount = await this.redisService.incrWithExpire({
       key: this.redisService.otpCountKey({ email }),
-      value: 1,
-      ttl: 60 * 5
-    })
+      ttl: 60 * 5,
+    });
+
+    if (newCount > 3) {
+      await this.redisService.decr({
+        key: this.redisService.otpCountKey({ email }),
+      });
+
+      throw new BadRequestResponse(
+        "You reached your limit, try again after 5 minutes"
+      );
+    }
 
     emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
@@ -432,7 +460,7 @@ class AuthService {
   // FORGET PASSWORD WITH LINK
   // ======================================================
 
-  async forgotPasswordLink(data: { email: string }, res: Response) {
+  async forgotPasswordLink(data: { email: string }) {
     const { email } = data;
 
     const user = await this.userRepo.findOne({
@@ -440,11 +468,7 @@ class AuthService {
     });
 
     if (!user) {
-      return successResponse({
-        res,
-        message: "If this email exists, a password reset link has been sent",
-        status: StatusCodes.SUCCESS.OK,
-      });
+      return;
     }
 
     if (user.provider === System.GMAIL) {
@@ -555,43 +579,76 @@ class AuthService {
   // UPDATE PASSWORD
   // ======================================================
 
-  async updatePassword(data: PasswordType, user: UserHydrated) {
+async updatePassword(data: PasswordType, user: UserHydrated) {
     const {
-      oldPassword,
-      newPassword,
-      confirmPassword
+        oldPassword,
+        newPassword,
+        confirmPassword,
     } = data;
-    const { id, password } = user;
-    const oldPasswords = user.oldPasswords ?? [];
 
-    if (!(await compareHash(oldPassword, password as string))) {
-      throw new BadRequestResponse("Invalid old password");
+    if (!oldPassword || !newPassword || !confirmPassword) {
+        throw new BadRequestResponse(
+            "Please fill all fields."
+        );
     }
-    if (
-      !oldPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) throw new BadRequestResponse("Please fill all fields.");
 
     if (newPassword !== confirmPassword) {
-      throw new BadRequestResponse("Invalid confirm password");
+        throw new BadRequestResponse(
+            "Invalid confirm password"
+        );
     }
 
-    for (let i = 0; i < oldPasswords.length; i++) {
-      if (await compareHash(newPassword, oldPasswords[i] as string)) {
-        throw new BadRequestResponse("This password are used before, please write new password");
-      }
+    const currentUser = await this.userRepo.findOne({
+        filter: { _id: user._id },
+        projection: {
+            password: 1,
+            oldPasswords: 1,
+        },
+    });
+
+    if (!currentUser?.password) {
+        throw new BadRequestResponse(
+            "Current password is unavailable"
+        );
     }
 
-    oldPasswords.push(await hashValue(oldPassword));
-    user.oldPasswords = oldPasswords;
-    user.password = await hashValue(newPassword);
-    user.changeCredentials = new Date();
+    if (!(await compareHash(
+        oldPassword,
+        currentUser.password
+    ))) {
+        throw new BadRequestResponse(
+            "Invalid old password"
+        );
+    }
 
-    await user.save();
+    const oldPasswords = currentUser.oldPasswords ?? [];
 
-    return user;
-  }
+    for (const oldPasswordHash of oldPasswords) {
+        if (await compareHash(
+            newPassword,
+            oldPasswordHash
+        )) {
+            throw new BadRequestResponse(
+                "This password was used before, please choose a new password"
+            );
+        }
+    }
+
+    oldPasswords.push(
+        await hashValue(currentUser.password)
+    );
+
+    await this.userRepo.updateOne({
+        filter: { _id: user._id },
+        update: {
+            password: await hashValue(newPassword),
+            oldPasswords,
+            changeCredentials: new Date(),
+        },
+    });
+
+    return;
+}
 
   // ======================================================
   // Simulate frontend redirect to Google OAuth2.0 login page
@@ -613,7 +670,7 @@ class AuthService {
   // LOGIN WITH GOOGLE
   // ======================================================
 
-  async loginGoogle(data: { code: number }) {
+  async loginGoogle(data: IgoogleLogin) {
     const { code } = data;
     if (!code) throw new BadRequestResponse("Code is required");
 
@@ -628,7 +685,7 @@ class AuthService {
       }
     );
 
-    const { access_token, id_token } = resToken.data;
+    const { id_token } = resToken.data;
     const client = new OAuth2Client(this.CLIENT_ID);
     const ticket = await client.verifyIdToken({
       idToken: id_token,
@@ -665,89 +722,95 @@ class AuthService {
   // REFRESH TOKEN
   // ======================================================
 
-  async refreshToken(data: Request & JwtPayload) {
-    const userId = data.user.id;
-    const refreshToken = data.headers["refresh-token"];
-    if (!refreshToken) throw new BadRequestResponse("Refresh token is required");
+  async refreshToken(req: Request) {
+    const rawRefreshToken = req.headers["refresh-token"];
 
-    let createTokenTime = data.decoded.iat
-    let uniqueTokenSigniture = data.decoded.jti;
-    const expireAccessTime = 60;
-    const expireTime = (createTokenTime + 60 * expireAccessTime) * 1000;
+    const refreshToken = Array.isArray(rawRefreshToken)
+      ? rawRefreshToken[0]
+      : rawRefreshToken;
 
-
-    const decoded = await this.tokenService.verifyToken(refreshToken as string, tokenTypes.REFRESH)
-    if (!decoded) {
-      throw new UnauthorizedResponse(
-        "Invalid Refresh Token"
+    if (!refreshToken) {
+      throw new BadRequestResponse(
+        "Refresh token is required"
       );
     }
 
+    const decoded = await this.tokenService.decodeToken(
+      refreshToken,
+      tokenTypes.REFRESH
+    );
+
     const user = await this.userRepo.findOne({
+      filter: {
+        _id: decoded.id,
+      },
+    });
 
-      filter: { _id: decoded.payload.id }
-    })
-    if (!user) throw new NotFoundResponse("User not found");
+    if (!user) {
+      throw new NotFoundResponse("User not found");
+    }
 
-    await this.redisService.setToken({
-      userId,
-      tokenSigniture: uniqueTokenSigniture,
-      value: uniqueTokenSigniture,
-      ttl: expireTime
-    })
+    const { accessToken, refreshToken: newRefreshToken } =
+      this.tokenService.createCredentials(user);
 
-    const { accessToken } = this.tokenService.createCredentials(user);
-
-    return accessToken;
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
   }
 
   // ======================================================
   // LOGOUT USER
   // ======================================================
 
-  async logoutUser(data: Request & JwtPayload) {
-    const userId = data.user.id;
-    const flag = data.body.flag;
+  async logoutUser(req: Request) {
+    if (!req.user || !req.payload) {
+      throw new UnauthorizedResponse(
+        "Authentication required"
+      );
+    }
 
-    let createTokenTime = data.decoded.iat
-    let uniqueTokenSigniture = data.decoded.jti;
-    const expireAccessTime = 60;
-    const expireTime = (createTokenTime + 60 * expireAccessTime) * 1000;
+    const userId = String((req.user as UserHydrated)._id);
+    const jti = req.payload.jti;
+    const exp = req.payload.exp;
+    const flag = req.body?.flag;
 
-    //60 minutes
-    let user = null;
+    if (!jti) {
+      throw new BadRequestResponse(
+        "Invalid access token"
+      );
+    }
 
     if (flag === "All") {
       await this.userRepo.updateOne({
         filter: { _id: userId },
         update: {
           $set: {
-            changeCredentials: new Date()
-          }
-        }
-      })
-
-      user = await this.userRepo.findOne({
-        filter: { _id: userId }
-      })
+            changeCredentials: new Date(),
+          },
+        },
+      });
 
       await this.redisService.deleteAllTokens({
-        userId
-      })
-
-      if (!user) throw new NotFoundResponse("User not found");
-
-    } else {
-
-      await this.redisService.setToken({
         userId,
-        tokenSigniture: uniqueTokenSigniture,
-        value: uniqueTokenSigniture,
-        ttl: expireTime
-      })
+      });
+
+      return null;
     }
 
-    return user;
+    const now = Math.floor(Date.now() / 1000);
+    const remainingSeconds = exp
+      ? Math.max(exp - now, 1)
+      : 3600;
+
+    await this.redisService.setToken({
+      userId,
+      tokenSigniture: jti,
+      value: jti,
+      ttl: remainingSeconds,
+    });
+
+    return null;
   }
 }
 

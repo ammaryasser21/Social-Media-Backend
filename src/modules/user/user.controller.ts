@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response, Router } from "express";
 import StatusCodes from "../../common/enums/status";
 import userService from "./user.service";
-import { successResponse } from "../../common/response";
+import { successResponse, UnauthorizedResponse } from "../../common/response";
+import { decrypt } from "../../common/utils/security/encrypt";
+import { UserHydrated } from "../../db/models/user.model";
 
 
 // ======================================================
@@ -14,12 +16,16 @@ export const getUser = async (
     next: NextFunction
 ) => {
     try {
-
-        const user = userService.getUser(req.user);
+        if (!req.user) {
+            throw new UnauthorizedResponse("Authentication required");
+        }
         return successResponse({
             res,
             status: StatusCodes.SUCCESS.OK,
-            data: user
+            data: {
+                ...req.user,
+                phone: req.user.phone ? decrypt(req.user.phone) : req.user.phone
+            }
         });
     } catch (error) {
         next(error)
@@ -38,8 +44,11 @@ export const updateUserImg = async (
 ) => {
 
     try {
+        if (!req.user) {
+            throw new UnauthorizedResponse("Authentication required");
+        }
 
-        const result = await userService.updateUserImg(req.file, req.user);
+        const result = await userService.updateUserImg(req.file, req.user as UserHydrated);
 
         return successResponse({
             res,
@@ -63,9 +72,12 @@ export const updateUserCover = async (
     next: NextFunction
 ) => {
     try {
+        if (!req.user) {
+            throw new UnauthorizedResponse("Authentication required");
+        }
         const result = await userService.updateUserCover(
             req.files as Express.Multer.File[] | undefined,
-            req.user
+            req.user as UserHydrated
         );
 
         return successResponse({

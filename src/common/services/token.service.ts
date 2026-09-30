@@ -106,22 +106,26 @@ class TokenService {
   // ==========================================
 
 verifyToken = (
-  token: string,
-  secret: string
+    token: string,
+    secret: string,
+    audience: string
 ): TokenPayload => {
+    const issuer = process.env.ISSUER;
 
-  const decoded = jwt.verify(token, secret);
+    if (!issuer) {
+        throw new Error("ISSUER is missing from environment variables");
+    }
 
-  if (
-    typeof decoded === "string" ||
-    !decoded
-  ) {
-    throw new BadRequestResponse(
-      "Invalid token payload"
-    );
-  }
+    const decoded = jwt.verify(token, secret, {
+        issuer,
+        audience,
+    });
 
-  return decoded as TokenPayload;
+    if (typeof decoded === "string" || !decoded) {
+        throw new BadRequestResponse("Invalid token payload");
+    }
+
+    return decoded as TokenPayload;
 };
 
 
@@ -130,41 +134,28 @@ verifyToken = (
   // ==========================================
 
 decodeToken = async (
-  token: string,
-  tokenType: tokenTypes
+    token: string,
+    tokenType: tokenTypes
 ): Promise<TokenPayload> => {
+    const data = jwt.decode(token) as TokenPayload | null;
 
-  const data = jwt.decode(token) as TokenPayload | null;
+    if (!data || !data.role) {
+        throw new BadRequestResponse("Invalid token");
+    }
 
-  if (!data) {
-    throw new ErrorResponse(
-      "Invalid token",
-      StatusCodes.SERVER_ERROR.INTERNAL_SERVER_ERROR
+    const { accessSecret, refreshSecret } =
+        this.detectUserKeys(data.role);
+
+    const secret =
+        tokenType === tokenTypes.ACCESS
+            ? accessSecret
+            : refreshSecret;
+
+    return this.verifyToken(
+        token,
+        secret,
+        data.role
     );
-  }
-
-  const {
-    id,
-    jti,
-    role,
-  } = data;
-
-  const {
-    accessSecret,
-    refreshSecret,
-  } = this.detectUserKeys(role);
-
-  const secret =
-    tokenType === tokenTypes.ACCESS
-      ? accessSecret
-      : refreshSecret;
-
-  const decoded = this.verifyToken(
-    token,
-    secret
-  );
-
-  return decoded;
 };
 
 

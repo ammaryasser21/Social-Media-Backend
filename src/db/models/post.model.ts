@@ -17,7 +17,7 @@ const postSchema = new Schema<IPost>(
             trim: true,
             maxLength: 5000,
             required: function (): boolean {
-                return this.attachments?.length == 0;
+                return !this.attachments?.length;
             }
         },
 

@@ -34,7 +34,7 @@ const userSchema = new Schema<IUser>(
       required: true,
       trim: true,
       minLength: 3,
-      maxLength: 20,
+      maxLength: 254,
     },
 
     confirmEmail: {
@@ -51,7 +51,7 @@ const userSchema = new Schema<IUser>(
     password: {
       type: String,
       trim: true,
-      minLength: 3,
+      minLength: 8,
       select: false,
     },
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { loginSchema, signUpSchema } from "./auth.validation";
+import { googleLoginSchema, loginSchema, signUpSchema } from "./auth.validation";
 
 //option 1 dynamic
 // type IloginType= typeof loginSchema;
@@ -20,3 +20,5 @@ import { loginSchema, signUpSchema } from "./auth.validation";
 export type Ilogin=z.infer<typeof loginSchema.body>;
 
 export type ISignUp=z.infer<typeof signUpSchema.body>;
+
+export type IgoogleLogin=z.infer<typeof googleLoginSchema.body>;

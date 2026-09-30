@@ -10,16 +10,16 @@ import { join } from "node:path";
 import helmet from "helmet";
 import { limiter } from "./middleware";
 import DBconnection from "./db/connection";
+import { redisService } from "./common/services/redis.repository";
+import { auth } from "./middleware/auth.middlware";
 const bootstrap = async () => {
 
     config({
         path: ".env"
     })
 
-    const Port = process.env.PORT;
 
-
-    await DBconnection();
+    await redisService.connection();
 
     const app: Express = express();
 
@@ -27,34 +27,37 @@ const bootstrap = async () => {
     app.use(express.json());
 
     //This will add header x-forword-for in my req this header give me ip for the device
-    app.set("trust proxy", true);
+    const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
+    app.set("trust proxy", trustProxyHops);
 
 
     // Apply the rate limiting middleware to all requests.
     app.use(limiter);
 
 
-    // const whiteList = [`${process.env.FRONTEND_URL}`];
-    app.use(cors({
-        // origin:[`${process.env.FRONTEND_URL}`],
-        // origin: function (origin, callback) {
-        //     //this white list to avoid the undfind origin that comes from postman
-        //     if (whiteList.includes(origin)) callback(null, true);
-        //     callback(new Error("Invalid origin"));
-        // },
-        origin: "*",
-        credentials: true, //cookies
-        // allowedHeaders:["content-type"],
-        // methods:["GET","POST"],
-    }))
+const frontendUrl = process.env.FRONTEND_URL;
 
-    //to protect your site
+    app.use(
+        cors({
+            origin: (origin, callback) => {
+                // Allow non-browser clients such as Postman/curl.
+                if (!origin) return callback(null, true);
+
+                if (frontendUrl && origin === frontendUrl) {
+                    return callback(null, true);
+                }
+
+                return callback(new Error("Invalid CORS origin"));
+            },
+            credentials: true,
+        })
+    );
+
     app.use(helmet());
 
     app.use("/uploads",
         express.static(join(process.cwd(), "uploads"))
     );
-    app.use(express.json());
 
     app.get("/", (req: Request, res: Response, next: NextFunction): void => {
         successResponse({
@@ -63,12 +66,20 @@ const bootstrap = async () => {
         });
     })
 
-    app.use("/auth", authRouter);
-    app.use("/user", userRouter);
+    app.use(
+        "/auth", 
+        authRouter
+    );
+    
+    app.use(
+        "/user",
+        auth, 
+        userRouter
+    );
 
     app.use(globalErrorHandler);
 
-    app.listen(3000, () => {
+    app.listen(Number(process.env.PORT) || 3000, () => {
         console.log("server is runing");
     })
 

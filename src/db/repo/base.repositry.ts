@@ -104,7 +104,7 @@ export abstract class BaseRepositry<T> {
     }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
         const docs = this.model.findById(id, projection);
         if (options?.lean) {
-            docs.lean() as FlattenMaps<T>;
+            docs.lean();
         }
         if (options?.populate) {
             docs.populate(options.populate as PopulateOptions);

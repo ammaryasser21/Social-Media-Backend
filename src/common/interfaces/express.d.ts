@@ -1,15 +1,13 @@
-import { IUser } from "../common/interfaces/user.interface";
-import { TokenPayload } from "../common/interfaces/token.interface";
+import { IUser } from "./user.interface";
+import { TokenPayload } from "./token.interface";
 
 declare global {
-  namespace Express {
-    interface Request {
-      user?: IUser;
-      payload?: TokenPayload;
-    }
-  }
+    namespace Express {
+        interface Request {
+            user?: IUser;
+            payload?: TokenPayload;
+        }
 
-  namespace Express {
         namespace Multer {
             interface File {
                 finalPath?: string;
@@ -17,6 +15,5 @@ declare global {
         }
     }
 }
-
 
 export {};

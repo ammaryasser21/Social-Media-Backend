@@ -1,46 +1,62 @@
 
 import StatusCodes from "../enums/status.js";
-import { DeleteManyParams, DeleteParams, ExistsParams, ExpireParams, GetParams, KeysParams, SetParams, SetTokenParams, TokenParams } from "../interfaces/redis.repo.interface.js";
-import { BadRequestResponse, ErrorResponse } from "../response/error-response.js";
-import { createClient, RedisClient } from 'redis';
-import { RedisClientType } from '@redis/client';
+import {
+    DeleteManyParams,
+    DeleteParams,
+    ExistsParams,
+    ExpireParams,
+    GetParams,
+    KeysParams,
+    SetParams,
+    SetTokenParams,
+    TokenParams,
+} from "../interfaces/redis.repo.interface.js";
+import { ErrorResponse } from "../response/error-response.js";
+import { createClient, RedisClientType } from "redis";
 import { config } from "dotenv";
-
 
 class RedisService {
 
   private redisClient: RedisClientType;
-  constructor() {
+constructor() {
     config();
-    this.redisClient = createClient({
-      url: process.env.REDIS_URL! as string,
-    });
 
+    const redisUrl = process.env.REDIS_URL;
 
-  }
-
-
-  public async connection() {
-    try {
-      await this.redisClient.connect();
-      console.log("Redis connected successfully...");
-    } catch (error) {
-      console.error("Redis connection error:", error);
-
+    if (!redisUrl) {
+        throw new Error("REDIS_URL is missing from environment variables");
     }
 
+    this.redisClient = createClient({
+        url: redisUrl,
+    });
+
     this.handleErrorEvent();
-  }
+}
 
-  private handleErrorEvent = () => {
+public async connection(): Promise<void> {
+    if (this.redisClient.isOpen) {
+        return;
+    }
+
+    try {
+        await this.redisClient.connect();
+        console.log("Redis connected successfully...");
+    } catch (error) {
+        console.error("Redis connection error:", error);
+        throw new ErrorResponse(
+            "Redis connection failed",
+            StatusCodes.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            error
+        );
+    }
+}
+
+private handleErrorEvent = (): void => {
     this.redisClient.on("error", (err) => {
-      throw new ErrorResponse(
-        err,
-        StatusCodes.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-      );
-    })
-
-  };
+        console.error("Redis client error:", err);
+    });
+};
 
   async get({ key }: GetParams): Promise<unknown | null> {
     const result = await this.redisClient.get(key);
@@ -60,6 +76,22 @@ class RedisService {
   async incr({ key }: GetParams): Promise<number> {
     return await this.redisClient.incr(key);
   }
+
+  async incrWithExpire({
+    key,
+    ttl,
+}: {
+    key: string;
+    ttl: number;
+}): Promise<number> {
+    const totalHits = await this.redisClient.incr(key);
+
+    if (totalHits === 1) {
+        await this.redisClient.expire(key, ttl);
+    }
+
+    return totalHits;
+}
 
 
   async decr({ key }: GetParams): Promise<number> {

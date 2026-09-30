@@ -5,9 +5,10 @@ import {
 } from "express";
 
 import StatusCodes from "../../common/enums/status";
-import { successResponse } from "../../common/response";
+import { successResponse, UnauthorizedResponse } from "../../common/response";
 
 import authService from "./auth.service";
+import { UserHydrated } from "../../db/models/user.model";
 
 export const login = async (
   req: Request,
@@ -172,7 +173,7 @@ export const forgotPasswordLink = async (
 ) => {
   try {
 
-    await authService.forgotPasswordLink(req.body, res);
+    await authService.forgotPasswordLink(req.body);
 
     return successResponse({
       res,
@@ -208,7 +209,14 @@ export const updatePassword = async (
 ) => {
   try {
 
-    const result = await authService.updatePassword(req.body, req.user);
+    if (!req.user) {
+      throw new UnauthorizedResponse("Authentication required");
+    }
+
+    const result = await authService.updatePassword(
+      req.body,
+      req.user as UserHydrated
+    );
 
     return successResponse({
       res,
@@ -250,7 +258,7 @@ export const logoutUser = async (
   res: Response,
   next: NextFunction
 ) => {
-  const result = await authService.logoutUser(req.body);
+  const result = await authService.logoutUser(req);
 
   return successResponse({
     res,

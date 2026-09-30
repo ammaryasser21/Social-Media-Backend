@@ -39,7 +39,8 @@ userRouter.patch("/profile/cover",
         allowedMimeTypes: MIME_TYPES.IMAGE,
         upload: {
             way: UPLOAD_WAY.ARRAY,
-            fieldName: "cover_img"
+            fieldName: "cover_img",
+            maxCount: 5
         }
     }),
     updateUserCover

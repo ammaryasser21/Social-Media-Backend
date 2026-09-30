@@ -15,8 +15,8 @@ export const emailSchema = z
   .trim();
 
 export const passwordSchema = z
-  .string({ error: "Password must be a string" })
-  .min(6, "Password must be at least 6 characters long");
+    .string({ error: "Password must be a string" })
+    .min(8, "Password must be at least 8 characters long");
 
 export const phoneSchema = z
   .string({ error: "Phone number must be a string" })
@@ -26,10 +26,10 @@ export const phoneSchema = z
   );
 
 export const ageSchema = z
-  .number({ error: "Age must be a number" })
-  .int("Age must be an integer")
-  .min(18, "Age must be at least 18")
-  .max(100, "Age must be at most 100");
+    .number({ error: "Age must be a number" })
+    .int("Age must be an integer")
+    .min(18, "Age must be at least 18")
+    .max(60, "Age must be at most 60");
 
 export const roleSchema = z.enum(
   Object.values(Roles) as [
