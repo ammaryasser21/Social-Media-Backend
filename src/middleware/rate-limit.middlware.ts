@@ -8,7 +8,7 @@ import {
 
 import { successResponse } from "../common/response";
 import StatusCodes from "../common/enums/status";
-import { redisServer } from "../common/services/redis.repository";
+import { redisService } from "../common/services/redis.repository";
 
 
 // =========================
@@ -19,7 +19,7 @@ const redisStore: Store = {
 
     async increment(key: string): Promise<IncrementResponse> {
 
-        const totalHits = await redisServer.incr({ key });
+        const totalHits = await redisService.incr({ key });
 
         return {
             totalHits,
@@ -30,13 +30,13 @@ const redisStore: Store = {
 
     async decrement(key: string): Promise<void> {
 
-        await redisServer.decr({ key });
+        await redisService.decr({ key });
     },
 
 
     async resetKey(key: string): Promise<void> {
 
-        await redisServer.delete({ key });
+        await redisService.delete({ key });
     },
 
 };

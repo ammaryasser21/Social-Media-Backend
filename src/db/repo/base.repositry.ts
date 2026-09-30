@@ -1,7 +1,11 @@
 import { CreateOptions, DeleteResult, FlattenMaps, HydratedDocument, Model, MongooseUpdateQueryOptions, PopulateOptions, ProjectionType, QueryFilter, QueryOptions, Types, UpdateQuery, UpdateResult } from 'mongoose';
+import { NotFoundResponse } from '../../common/response';
 export abstract class BaseRepositry<T> {
 
-    constructor(private model: Model<T>) { }
+    constructor(
+        private model: Model<T>,
+        private entityName: string
+    ) { }
 
     create({
         data,

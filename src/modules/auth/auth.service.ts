@@ -44,7 +44,6 @@ import {
 import { System } from '../../common/enums/system';
 import { passwordChangedEmail } from '../../common/templates/emails/password-changed';
 import generateResetToken from '../../common/utils/security/generate-reset-token';
-import { config } from 'dotenv';
 import axios from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import { tokenTypes } from '../../common/enums/token';
@@ -67,7 +66,6 @@ class AuthService {
   private CLIENT_SECRET: string;
 
   constructor() {
-    config();
     this.userRepo = new UserRepositry();
     this.redisService = redisService;
     this.tokenService = tokenService;

@@ -12,7 +12,7 @@ export interface IUserAddress {
 export interface IUser {
   first_name?: string;
   last_name?: string;
-  email: string;
+  email?: string;
   confirmEmail?: boolean;
   age?: number;
   password?: string | undefined;
@@ -29,6 +29,6 @@ export interface IUser {
   changeCredentials?: Date;
   createdAt?: Date;
   updatedAt?: Date;
-  version?: number;
+  deletedAt?: Date;
   full_name?:string;
 }

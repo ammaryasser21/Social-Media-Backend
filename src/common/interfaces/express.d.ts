@@ -8,6 +8,15 @@ declare global {
       payload?: TokenPayload;
     }
   }
+
+  namespace Express {
+        namespace Multer {
+            interface File {
+                finalPath?: string;
+            }
+        }
+    }
 }
+
 
 export {};

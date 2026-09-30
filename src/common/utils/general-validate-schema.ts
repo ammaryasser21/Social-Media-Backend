@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { Types } from "mongoose";
 import { Roles } from "../enums/roles";
+import { MIME_TYPES } from "../enums/multer";
 
 export const fullNameSchema = z
   .string({ error: "Full name must be a string" })
@@ -54,17 +55,31 @@ export const isActiveSchema = z.preprocess(
 ).default(true);
 
 export const fileSchema = z.object({
-  fieldname: z.string(),
-  originalname: z.string(),
-  encoding: z.string(),
-  mimetype: z.string(),
-  size: z.number(),
-  destination: z.string().optional(),
-  filename: z.string().optional(),
-  path: z.string().optional(),
-  finalPath: z.string().optional(),
-  buffer: z.instanceof(Buffer).optional(),
+    fieldname: z.string(),
+    originalname: z.string(),
+    encoding: z.string(),
+    mimetype: z.string(),
+    size: z.number().nonnegative(),
+
+    destination: z.string().optional(),
+    filename: z.string().optional(),
+    path: z.string().optional(),
+
+    finalPath: z.string().optional(),
+
+    buffer: z.instanceof(Buffer).optional(),
 }).strict();
+
+export const imageFileSchema = fileSchema.extend({
+    mimetype: z.enum(
+        Object.values(MIME_TYPES.IMAGE) as [
+            string,
+            ...string[]
+        ]
+    ),
+});
+
+
 
 export const otpSchema = z
   .string()

@@ -1,7 +1,48 @@
 import { Router } from "express";
-import { getProfile } from "./user.controller";
-const authRouter = Router();
+import {
+    getUser,
+    updateUserCover,
+    updateUserImg
+} from "./user.controller";
 
-authRouter.get("/", getProfile)
+import localUpload from "../../common/utils/multer";
 
-export default authRouter;
+import {
+    MIME_TYPES,
+    STORAGE_TYPES,
+    UPLOAD_WAY
+} from "../../common/enums/multer";
+
+const userRouter = Router();
+
+userRouter.get("/profile",
+    getUser
+);
+
+userRouter.patch("/profile/image",
+    localUpload({
+        storageType: STORAGE_TYPES.DISK,
+        folder: "uploads",
+        allowedMimeTypes: MIME_TYPES.IMAGE,
+        upload: {
+            way: UPLOAD_WAY.SINGLE,
+            fieldName: "profile_img"
+        }
+    }),
+    updateUserImg
+);
+
+userRouter.patch("/profile/cover",
+    localUpload({
+        storageType: STORAGE_TYPES.DISK,
+        folder: "uploads",
+        allowedMimeTypes: MIME_TYPES.IMAGE,
+        upload: {
+            way: UPLOAD_WAY.ARRAY,
+            fieldName: "cover_img"
+        }
+    }),
+    updateUserCover
+);
+
+export default userRouter;
