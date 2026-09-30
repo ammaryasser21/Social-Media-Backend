@@ -19,11 +19,12 @@ const bootstrap = async () => {
     })
 
 
+    await DBconnection();
     await redisService.connection();
 
     const app: Express = express();
 
-    
+
     app.use(express.json());
 
     //This will add header x-forword-for in my req this header give me ip for the device
@@ -35,7 +36,7 @@ const bootstrap = async () => {
     app.use(limiter);
 
 
-const frontendUrl = process.env.FRONTEND_URL;
+    const frontendUrl = process.env.FRONTEND_URL;
 
     app.use(
         cors({
@@ -67,13 +68,13 @@ const frontendUrl = process.env.FRONTEND_URL;
     })
 
     app.use(
-        "/auth", 
+        "/auth",
         authRouter
     );
-    
+
     app.use(
         "/user",
-        auth, 
+        auth,
         userRouter
     );
 

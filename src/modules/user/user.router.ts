@@ -12,6 +12,8 @@ import {
     STORAGE_TYPES,
     UPLOAD_WAY
 } from "../../common/enums/multer";
+import { updateUserCoverSchema, updateUserImgSchema } from "./user.validation";
+import { validation } from "../../middleware";
 
 const userRouter = Router();
 
@@ -29,6 +31,7 @@ userRouter.patch("/profile/image",
             fieldName: "profile_img"
         }
     }),
+    validation(updateUserImgSchema),
     updateUserImg
 );
 
@@ -43,6 +46,7 @@ userRouter.patch("/profile/cover",
             maxCount: 5
         }
     }),
+    validation(updateUserCoverSchema),
     updateUserCover
 );
 

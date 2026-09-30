@@ -103,8 +103,14 @@ class AuthService {
         lean: true,
       },
     });
-
     if (!user) throw new BadRequestResponse("Invalid email or password");
+
+    if (!user.confirmEmail) {
+      throw new UnauthorizedResponse(
+        "Please confirm your email first"
+      );
+    }
+
 
     if (!await compareHash(password, user.password as string)) {
       throw new BadRequestResponse("Invalid email or password");
@@ -579,76 +585,76 @@ class AuthService {
   // UPDATE PASSWORD
   // ======================================================
 
-async updatePassword(data: PasswordType, user: UserHydrated) {
+  async updatePassword(data: PasswordType, user: UserHydrated) {
     const {
-        oldPassword,
-        newPassword,
-        confirmPassword,
+      oldPassword,
+      newPassword,
+      confirmPassword,
     } = data;
 
     if (!oldPassword || !newPassword || !confirmPassword) {
-        throw new BadRequestResponse(
-            "Please fill all fields."
-        );
+      throw new BadRequestResponse(
+        "Please fill all fields."
+      );
     }
 
     if (newPassword !== confirmPassword) {
-        throw new BadRequestResponse(
-            "Invalid confirm password"
-        );
+      throw new BadRequestResponse(
+        "Invalid confirm password"
+      );
     }
 
     const currentUser = await this.userRepo.findOne({
-        filter: { _id: user._id },
-        projection: {
-            password: 1,
-            oldPasswords: 1,
-        },
+      filter: { _id: user._id },
+      projection: {
+        password: 1,
+        oldPasswords: 1,
+      },
     });
 
     if (!currentUser?.password) {
-        throw new BadRequestResponse(
-            "Current password is unavailable"
-        );
+      throw new BadRequestResponse(
+        "Current password is unavailable"
+      );
     }
 
     if (!(await compareHash(
-        oldPassword,
-        currentUser.password
+      oldPassword,
+      currentUser.password
     ))) {
-        throw new BadRequestResponse(
-            "Invalid old password"
-        );
+      throw new BadRequestResponse(
+        "Invalid old password"
+      );
     }
 
     const oldPasswords = currentUser.oldPasswords ?? [];
 
     for (const oldPasswordHash of oldPasswords) {
-        if (await compareHash(
-            newPassword,
-            oldPasswordHash
-        )) {
-            throw new BadRequestResponse(
-                "This password was used before, please choose a new password"
-            );
-        }
+      if (await compareHash(
+        newPassword,
+        oldPasswordHash
+      )) {
+        throw new BadRequestResponse(
+          "This password was used before, please choose a new password"
+        );
+      }
     }
 
-    oldPasswords.push(
-        await hashValue(currentUser.password)
-    );
+    oldPasswords.push(currentUser.password);
+
+    const newPasswordHash = await hashValue(newPassword);
 
     await this.userRepo.updateOne({
-        filter: { _id: user._id },
-        update: {
-            password: await hashValue(newPassword),
-            oldPasswords,
-            changeCredentials: new Date(),
-        },
+      filter: { _id: user._id },
+      update: {
+        password: newPasswordHash,
+        oldPasswords,
+        changeCredentials: new Date(),
+      },
     });
 
     return;
-}
+  }
 
   // ======================================================
   // Simulate frontend redirect to Google OAuth2.0 login page
@@ -705,6 +711,8 @@ async updatePassword(data: PasswordType, user: UserHydrated) {
             last_name: payload.family_name ?? "",
             email: payload.email ?? "",
             provider: System.GMAIL,
+            confirmEmail: true,
+            is_active: true,
           }
         });
       }

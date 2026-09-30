@@ -69,6 +69,8 @@ export const auth = async (
         }
     }
 
+
+
     req.user = user;
     req.payload = decoded;
 
