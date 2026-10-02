@@ -8,7 +8,7 @@ import type {
 } from "multer";
 
 import { STORAGE_TYPES, UPLOAD_WAY } from "../enums/multer";
-import { CreateStorageOptions, FileFilter, LocalUploadOptions } from "../interfaces/multer.interface";
+import { CreateStorageOptions, FileFilter, CloudUploadOptions } from "../interfaces/multer.interface";
 import { RequestHandler } from "express";
 
 // --------------------------------------------------
@@ -77,8 +77,6 @@ const createStorage = ({
                 fileName
             );
 
-            
-
             cb(null, fileName);
         },
     });
@@ -89,7 +87,7 @@ const createStorage = ({
 // Main Upload Function
 // --------------------------------------------------
 
-const localUpload = ({
+const cloudUpload = ({
     storageType = STORAGE_TYPES.DISK,
     folder = "general",
     fileValidation = [],
@@ -98,14 +96,12 @@ const localUpload = ({
         way: UPLOAD_WAY.SINGLE,
         fieldName: "file",
     },
-}: LocalUploadOptions = {}): RequestHandler => {
+}: CloudUploadOptions = {}): RequestHandler => {
 
     const storage = createStorage({
         storageType,
         folder,
     });
-
-    
 
     // --------------------------------------------------
     // Default File Filter
@@ -116,7 +112,6 @@ const localUpload = ({
         file,
         cb
     ) => {
-
         // file.storageType = storageType;
         if (
             fileValidation.length > 0 &&
@@ -201,4 +196,4 @@ const localUpload = ({
 };
 
 
-export default localUpload;
+export default cloudUpload;

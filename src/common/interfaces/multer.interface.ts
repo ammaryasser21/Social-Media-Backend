@@ -22,7 +22,15 @@ export interface CreateStorageOptions {
 export interface LocalUploadOptions {
     storageType?: STORAGE_TYPES;
     folder?: string;
-    allowedMimeTypes?:readonly  string[];
+    fileValidation?:readonly  string[];
+    maxFileSize?: number;
+    upload?: UploadConfig;
+}
+
+export interface CloudUploadOptions {
+    storageType?: STORAGE_TYPES;
+    folder?: string;
+    fileValidation?:readonly  string[];
     maxFileSize?: number;
     upload?: UploadConfig;
 }

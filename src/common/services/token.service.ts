@@ -10,7 +10,7 @@ import { Roles } from "../enums/roles.js";
 import { tokenTypes } from "../enums/token.js";
 import { BadRequestResponse, ErrorResponse } from "../response/error-response.js";
 import { Credentials, GenerateTokenOptions, TokenPayload, TokenSecrets, UserCredentialsInput, VerifyTokenResult } from "../interfaces/token.interface.js";
-import { redisService } from "./redis.repository.js";
+import { redisService } from "./redis.service.js";
 import { FlattenMaps, HydratedDocument } from "mongoose";
 import { IUser } from "../interfaces/user.interface.js";
 import StatusCodes from "../enums/status.js";

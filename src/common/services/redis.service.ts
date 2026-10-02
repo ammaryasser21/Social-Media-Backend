@@ -283,11 +283,17 @@ private handleErrorEvent = (): void => {
     email: string;
   }): string => `OTP::FORGET_PASSWORD::${email}`;
 
-  forgetOtpCountKey = ({
-    email,
-  }: {
-    email: string;
-  }): string => `OTP::FORGET_PASSWORD::COUNT::${email}`;
+forgetOtpRequestCountKey = ({
+  email,
+}: {
+  email: string;
+}): string => `OTP::FORGET_PASSWORD::REQUEST_COUNT::${email}`;
+
+forgetOtpAttemptCountKey = ({
+  email,
+}: {
+  email: string;
+}): string => `OTP::FORGET_PASSWORD::ATTEMPT_COUNT::${email}`;
 
   forgetTokenKey = ({
     token,

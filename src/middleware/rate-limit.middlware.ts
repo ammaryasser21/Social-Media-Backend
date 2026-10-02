@@ -8,7 +8,7 @@ import {
 
 import { successResponse } from "../common/response";
 import StatusCodes from "../common/enums/status";
-import { redisService } from "../common/services/redis.repository";
+import { redisService } from "../common/services/redis.service";
 
 
 // =========================

@@ -1,5 +1,6 @@
 import { IUser } from "./user.interface";
 import { TokenPayload } from "./token.interface";
+import { STORAGE_TYPES } from "../enums/multer";
 
 declare global {
     namespace Express {

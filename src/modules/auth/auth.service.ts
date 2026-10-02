@@ -1,7 +1,7 @@
 import {
   redisService,
   RedisServiceType
-} from './../../common/services/redis.repository';
+} from '../../common/services/redis.service';
 
 import {
   BadRequestResponse,
@@ -236,22 +236,33 @@ class AuthService {
     const user = await this.userRepo.findOne({
       filter: {
         email,
-        confirmEmail: false
-      }
+        confirmEmail: false,
+      },
     });
-    if (!user) throw new NotFoundResponse("User not found");
+
+    if (!user) {
+      throw new NotFoundResponse("User not found");
+    }
+
+    // Prevent requesting another OTP while the current one is still valid
+    const otpKey = this.redisService.otpKey({ email });
 
     const ttl = await this.redisService.ttl({
-      key: this.redisService.otpKey({ email }),
+      key: otpKey,
     });
 
     if (ttl > 0) {
-      throw new BadRequestResponse("OTP still valid");
+      throw new BadRequestResponse(
+        "OTP still valid. Please wait before requesting another one"
+      );
     }
 
+    const otpCountKey = this.redisService.otpCountKey({ email });
+
+    // Maximum 3 OTP requests within 5 minutes
     const otpCount = Number(
       await this.redisService.get({
-        key: this.redisService.otpCountKey({ email }),
+        key: otpCountKey,
       }) ?? 0
     );
 
@@ -260,30 +271,33 @@ class AuthService {
         "You reached your limit, try again after 5 minutes"
       );
     }
-    const otp = await generateOtp();
-    const hashedOtp = await hashValue(otp);
 
-    await this.redisService.set({
-      key: this.redisService.otpKey({ email }),
-      value: hashedOtp,
-      ttl: 120
-    });
-
-    //for limit user requests
+    // Increment request count first
     const newCount = await this.redisService.incrWithExpire({
-      key: this.redisService.otpCountKey({ email }),
+      key: otpCountKey,
       ttl: 60 * 5,
     });
 
+    // Safety check in case of concurrent requests
     if (newCount > 3) {
       await this.redisService.decr({
-        key: this.redisService.otpCountKey({ email }),
+        key: otpCountKey,
       });
 
       throw new BadRequestResponse(
         "You reached your limit, try again after 5 minutes"
       );
     }
+
+    // Generate OTP only after the request has been accepted
+    const otp = await generateOtp();
+    const hashedOtp = await hashValue(otp);
+
+    await this.redisService.set({
+      key: otpKey,
+      value: hashedOtp,
+      ttl: 120,
+    });
 
     emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
@@ -292,11 +306,11 @@ class AuthService {
         html: otpEmail({
           name: user.first_name as string,
           otp,
-          title: " Resend confirm email otp",
-          expiresIn: "2 minutes"
-        })
+          title: "Resend confirm email OTP",
+          expiresIn: "2 minutes",
+        }),
       });
-    })
+    });
 
     return;
   }
@@ -309,10 +323,13 @@ class AuthService {
     const { email } = data;
 
     const user = await this.userRepo.findOne({
-      filter: { email }
+      filter: { email },
     });
 
-    if (!user) return;
+    // Do not reveal whether the email exists.
+    if (!user) {
+      return;
+    }
 
     if (user.provider === System.GMAIL) {
       throw new BadRequestResponse(
@@ -320,8 +337,11 @@ class AuthService {
       );
     }
 
+    const otpKey = this.redisService.forgetOtpKey({ email });
+
+    // Prevent requesting another OTP while the current one is still valid
     const existingOtp = await this.redisService.get({
-      key: this.redisService.forgetOtpKey({ email }),
+      key: otpKey,
     });
 
     if (existingOtp) {
@@ -330,20 +350,71 @@ class AuthService {
       );
     }
 
+    // ======================================================
+    // OTP REQUEST LIMIT
+    // Maximum 3 OTP requests within 5 minutes
+    // ======================================================
+
+    const requestCountKey =
+      this.redisService.forgetOtpRequestCountKey({ email });
+
+    const requestCount = Number(
+      await this.redisService.get({
+        key: requestCountKey,
+      }) ?? 0
+    );
+
+    if (requestCount >= 3) {
+      throw new BadRequestResponse(
+        "You reached your limit, try again after 5 minutes"
+      );
+    }
+
+    // Increment request count BEFORE generating/storing OTP
+    const newRequestCount =
+      await this.redisService.incrWithExpire({
+        key: requestCountKey,
+        ttl: 60 * 5,
+      });
+
+    // Safety check for concurrent requests
+    if (newRequestCount > 3) {
+      await this.redisService.decr({
+        key: requestCountKey,
+      });
+
+      throw new BadRequestResponse(
+        "You reached your limit, try again after 5 minutes"
+      );
+    }
+
+    // ======================================================
+    // GENERATE OTP
+    // ======================================================
+
     const otp = await generateOtp();
     const hashedOtp = await hashValue(otp);
 
     await this.redisService.set({
-      key: this.redisService.forgetOtpKey({ email }),
+      key: otpKey,
       value: hashedOtp,
       ttl: 120,
     });
 
-    await this.redisService.set({
-      key: this.redisService.forgetOtpCountKey({ email }),
-      value: 1,
-      ttl: 60 * 5
-    })
+    // ======================================================
+    // RESET FAILED ATTEMPTS FOR THIS OTP
+    // ======================================================
+
+    const attemptCountKey =
+      this.redisService.forgetOtpAttemptCountKey({ email });
+
+    await this.redisService.delete({
+      key: attemptCountKey,
+    });
+
+    // ======================================================
+    // SEND EMAIL
+    // ======================================================
 
     emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
@@ -352,14 +423,14 @@ class AuthService {
         html: otpEmail({
           name: user.first_name || "there",
           otp,
-          title: "Forget Password otp",
+          title: "Forget Password OTP",
           expiresIn: "2 minutes",
         }),
       });
     });
 
     return;
-  };
+  }
 
   // ======================================================
   // VERIFY FORGET PASSWORD FUNCTION
@@ -369,33 +440,79 @@ class AuthService {
     const { email, otp } = data;
 
     const user = await this.userRepo.findOne({
-
-      filter: { email }
+      filter: { email },
     });
-    if (!user) throw new NotFoundResponse("User not found");
 
-    const hasedOtp = await this.redisService.get({
-      key: this.redisService.forgetOtpKey({ email })
-    })
-    if (!hasedOtp) throw new BadRequestResponse("Invalid or expired otp");
-
-    const forgetOtpCount = await this.redisService.get({
-      key: this.redisService.forgetOtpCountKey({ email })
-    })
-    if (Number(forgetOtpCount) >= 3) throw new BadRequestResponse("You reach your limit, try after 5 minutes");
-
-    //IS VERIED?
-    if (!(await compareHash(otp, hasedOtp as string))) {
-      await this.redisService.incr({
-        key: this.redisService.forgetOtpCountKey({ email })
-      });
-
-      throw new BadRequestResponse("Invalid or expired OTP");
+    if (!user) {
+      throw new NotFoundResponse("User not found");
     }
+
+    const otpKey = this.redisService.forgetOtpKey({ email });
+
+    const hashedOtp = await this.redisService.get({
+      key: otpKey,
+    });
+
+    if (!hashedOtp) {
+      throw new BadRequestResponse(
+        "Invalid or expired OTP"
+      );
+    }
+
+    // ======================================================
+    // CHECK FAILED ATTEMPTS
+    // Maximum 5 incorrect attempts
+    // ======================================================
+
+    const attemptCountKey =
+      this.redisService.forgetOtpAttemptCountKey({ email });
+
+    const attemptCount = Number(
+      await this.redisService.get({
+        key: attemptCountKey,
+      }) ?? 0
+    );
+
+    if (attemptCount >= 5) {
+      throw new BadRequestResponse(
+        "Too many incorrect attempts. Please request a new OTP"
+      );
+    }
+
+    // ======================================================
+    // VERIFY OTP
+    // ======================================================
+
+    const isValid = await compareHash(
+      otp,
+      hashedOtp as string
+    );
+
+    if (!isValid) {
+      const newAttemptCount =
+        await this.redisService.incrWithExpire({
+          key: attemptCountKey,
+          ttl: 120,
+        });
+
+      if (newAttemptCount >= 5) {
+        throw new BadRequestResponse(
+          "Too many incorrect attempts. Please request a new OTP"
+        );
+      }
+
+      throw new BadRequestResponse(
+        "Invalid or expired OTP"
+      );
+    }
+
+    // ======================================================
+    // OTP IS VALID
+    // ======================================================
 
     return {
       verified: true,
-      user
+      user,
     };
   }
 
@@ -404,12 +521,7 @@ class AuthService {
   // ======================================================
 
   async verifyForgetPasswordOtp(data: ConfirmEmailType) {
-    const {
-      email,
-      otp
-    } = data;
-
-    const { verified } = await this.verifyForgetPassword({ email, otp });
+    const { verified } = await this.verifyForgetPassword(data);
 
     return verified;
   }
@@ -418,14 +530,19 @@ class AuthService {
   // RESET PASSWORD WITH OTP
   // ======================================================
 
-  async resetPasswordOtp(data: ConfirmEmailType & { password: string }) {
+  async resetPasswordOtp(
+    data: ConfirmEmailType & { password: string }
+  ) {
     const {
       email,
       otp,
       password,
     } = data;
 
-    const { user } = await this.verifyForgetPassword({ email, otp });
+    const { user } = await this.verifyForgetPassword({
+      email,
+      otp,
+    });
 
     const hashedPassword = await hashValue(password);
 
@@ -434,22 +551,27 @@ class AuthService {
       update: {
         password: hashedPassword,
         changeCredentials: new Date(),
-      }
+      },
     });
 
+    // Delete OTP
     await this.redisService.delete({
       key: this.redisService.forgetOtpKey({ email }),
     });
 
+    // Delete failed-attempt counter
     await this.redisService.delete({
-      key: this.redisService.forgetOtpCountKey({ email }),
+      key: this.redisService.forgetOtpAttemptCountKey({
+        email,
+      }),
     });
 
-    await this.redisService.delete({
-      key: this.redisService.prefixTokenKey({ userId: String(user._id) }),
+    // Invalidate existing sessions/tokens
+    await this.redisService.deleteAllTokens({
+      userId: String(user._id),
     });
 
-    emailEmitter.emit("sendEmail", async () => {
+    await emailEmitter.emit("sendEmail", async () => {
       await sendEmail({
         to: email,
         subject: "Password changed",
@@ -460,7 +582,7 @@ class AuthService {
     });
 
     return;
-  };
+  }
 
   // ======================================================
   // FORGET PASSWORD WITH LINK

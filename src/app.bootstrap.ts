@@ -10,8 +10,10 @@ import { join } from "node:path";
 import helmet from "helmet";
 import { limiter } from "./middleware";
 import DBconnection from "./db/connection";
-import { redisService } from "./common/services/redis.repository";
+import { redisService } from "./common/services/redis.service";
 import { auth } from "./middleware/auth.middlware";
+import s3Service from "./common/services/s3.service";
+import { pipeline } from "node:stream/promises";
 const bootstrap = async () => {
 
     config({
@@ -59,6 +61,24 @@ const bootstrap = async () => {
     app.use("/uploads",
         express.static(join(process.cwd(), "uploads"))
     );
+
+    // app.use("/uploads/*path", async (
+    //     req: Request,
+    //     res: Response,
+    //     next: NextFunction
+    // ) => {
+
+    //     const path = (req.params?.path as string[]).join("/");
+
+    //     const result = await s3Service.getFile({
+    //         fileName: path
+    //     })
+
+    //     await pipeline(result.Body as NodeJS.ReadableStream, res)
+
+    // }
+
+    // );
 
     app.get("/", (req: Request, res: Response, next: NextFunction): void => {
         successResponse({
