@@ -10,6 +10,10 @@ export const loginSchema = {
     password: z
       .string()
       .min(8, "Password must be at least 8 characters"),
+
+    FCM_Token:z
+    .string()
+    .optional()
   }),
 };
 

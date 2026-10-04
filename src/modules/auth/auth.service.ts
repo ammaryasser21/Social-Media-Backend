@@ -6,7 +6,6 @@ import {
 import {
   BadRequestResponse,
   NotFoundResponse,
-  successResponse,
   UnauthorizedResponse
 } from '../../common/response';
 
@@ -49,14 +48,8 @@ import axios from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import { tokenTypes } from '../../common/enums/token';
 import { resetPasswordEmail } from '../../common/templates/emails/reset-password';
-
-import {
-  Request,
-  Response
-} from 'express';
-
 import { JwtPayload } from 'jsonwebtoken';
-import StatusCodes from '../../common/enums/status';
+
 
 class AuthService {
   private userRepo: UserRepositry;
@@ -852,21 +845,9 @@ class AuthService {
   // REFRESH TOKEN
   // ======================================================
 
-  async refreshToken(req: Request) {
-    const rawRefreshToken = req.headers["refresh-token"];
-
-    const refreshToken = Array.isArray(rawRefreshToken)
-      ? rawRefreshToken[0]
-      : rawRefreshToken;
-
-    if (!refreshToken) {
-      throw new BadRequestResponse(
-        "Refresh token is required"
-      );
-    }
-
+  async refreshToken(token:string) {
     const decoded = await this.tokenService.decodeToken(
-      refreshToken,
+      token,
       tokenTypes.REFRESH
     );
 
@@ -893,17 +874,16 @@ class AuthService {
   // LOGOUT USER
   // ======================================================
 
-  async logoutUser(req: Request) {
-    if (!req.user || !req.payload) {
-      throw new UnauthorizedResponse(
-        "Authentication required"
-      );
-    }
+  async logoutUser(
+    user:UserHydrated,
+    payload:JwtPayload,
+    flag:string
+  ) {
 
-    const userId = String((req.user as UserHydrated)._id);
-    const jti = req.payload.jti;
-    const exp = req.payload.exp;
-    const flag = req.body?.flag;
+
+    const userId = String(user._id);
+    const jti = payload.jti;
+    const exp = payload.exp;
 
     if (!jti) {
       throw new BadRequestResponse(

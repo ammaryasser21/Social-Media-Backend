@@ -5,7 +5,7 @@ import {
 } from "express";
 
 import StatusCodes from "../../common/enums/status";
-import { successResponse, UnauthorizedResponse } from "../../common/response";
+import { BadRequestResponse, successResponse, UnauthorizedResponse } from "../../common/response";
 
 import authService from "./auth.service";
 import { UserHydrated } from "../../db/models/user.model";
@@ -54,7 +54,19 @@ export const refreshToken = async (
   next: NextFunction
 ) => {
   try {
-    const result = await authService.refreshToken(req);
+
+    const rawRefreshToken = req.headers["refresh-token"];;
+
+    const refreshToken = Array.isArray(rawRefreshToken)
+      ? rawRefreshToken[0]
+      : rawRefreshToken;
+
+    if (!refreshToken) {
+      throw new BadRequestResponse(
+        "Refresh token is required"
+      );
+    }
+    const result = await authService.refreshToken(refreshToken);
 
     return successResponse({
       res,
@@ -258,7 +270,20 @@ export const logoutUser = async (
   res: Response,
   next: NextFunction
 ) => {
-  const result = await authService.logoutUser(req);
+  const user = req.user;
+  const payload = req.payload;
+  const flag = req.body.flag;
+
+  if (!user || !payload) {
+    throw new UnauthorizedResponse(
+      "Authentication required"
+    );
+  }
+  const result = await authService.logoutUser(
+    user as UserHydrated,
+    payload,
+    flag
+  );
 
   return successResponse({
     res,
