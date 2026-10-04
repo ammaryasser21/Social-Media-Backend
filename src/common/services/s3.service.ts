@@ -60,7 +60,7 @@ class S3Service {
         ContentType
     }: IUploadFiles) {
 
-        const urls = await Promise.all([
+        const urls = await Promise.all(
             files.map(async (file) => {
                 const uploadedFiles = await this.uploadFile({
                     file,
@@ -71,7 +71,7 @@ class S3Service {
                 })
                 return uploadedFiles;
             })
-        ])
+        )
 
 
         return urls;

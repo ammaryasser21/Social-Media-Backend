@@ -2,7 +2,7 @@ import express, { Express, NextFunction, Request, Response } from "express";
 // import "dotenv/config";
 import { config } from "dotenv";
 import cors from "cors";
-import { authRouter } from "./modules";
+import { authRouter, postRouter } from "./modules";
 import { userRouter } from "./modules";
 import { globalErrorHandler } from "./middleware";
 import { successResponse } from "./common/response";
@@ -97,6 +97,12 @@ const bootstrap = async () => {
         auth,
         userRouter
     );
+
+    app.use(
+    "/post",
+    auth,
+    postRouter
+);
 
     app.use(globalErrorHandler);
 

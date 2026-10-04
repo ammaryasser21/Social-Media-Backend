@@ -7,7 +7,7 @@ export interface IPost {
   likes?: Types.ObjectId[];
   attachments?:string[];
   available:AvailableEnum;
-  createdBy:Types.ObjectId;
+  createdBy?:Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;

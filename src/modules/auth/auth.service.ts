@@ -49,6 +49,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { tokenTypes } from '../../common/enums/token';
 import { resetPasswordEmail } from '../../common/templates/emails/reset-password';
 import { JwtPayload } from 'jsonwebtoken';
+import notificationService, { NotificationServiceType } from '../../common/services/notification.service';
 
 
 class AuthService {
@@ -58,6 +59,7 @@ class AuthService {
   private CLIENT_ID: string;
   private REDIRECT_URI: string;
   private CLIENT_SECRET: string;
+  private notificationService: NotificationServiceType;
 
   constructor() {
     this.userRepo = new UserRepositry();
@@ -66,6 +68,7 @@ class AuthService {
     this.CLIENT_ID = process.env.CLIENT_ID ?? "";
     this.REDIRECT_URI = process.env.REDIRECT_URI ?? "";
     this.CLIENT_SECRET = process.env.CLIENT_SECRET ?? "";
+    this.notificationService = notificationService;
   }
 
   // ======================================================
@@ -93,7 +96,7 @@ class AuthService {
         is_active: 1,
       },
       options: {
-        lean: true,
+        lean: false,
       },
     });
     if (!user) throw new BadRequestResponse("Invalid email or password");
@@ -109,6 +112,27 @@ class AuthService {
       throw new BadRequestResponse("Invalid email or password");
     }
 
+
+    if (data.FCM_Token) {
+      await this.redisService.setFCMToken(
+        String(user._id),
+        data.FCM_Token
+      );
+
+      const tokens = await this.redisService.getFCMToken(
+        String(user._id)
+      );
+
+      await Promise.allSettled(
+        tokens.map((token) =>
+          this.notificationService.sendNotification({
+            token,
+            title: "Login successfully",
+            data: ""
+          })
+        )
+      );
+    }
 
     const {
       accessToken,
@@ -845,7 +869,7 @@ class AuthService {
   // REFRESH TOKEN
   // ======================================================
 
-  async refreshToken(token:string) {
+  async refreshToken(token: string) {
     const decoded = await this.tokenService.decodeToken(
       token,
       tokenTypes.REFRESH
@@ -875,9 +899,9 @@ class AuthService {
   // ======================================================
 
   async logoutUser(
-    user:UserHydrated,
-    payload:JwtPayload,
-    flag:string
+    user: UserHydrated,
+    payload: JwtPayload,
+    flag: string
   ) {
 
 

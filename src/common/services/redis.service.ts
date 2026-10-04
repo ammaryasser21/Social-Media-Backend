@@ -1,15 +1,15 @@
 
 import StatusCodes from "../enums/status.js";
 import {
-    DeleteManyParams,
-    DeleteParams,
-    ExistsParams,
-    ExpireParams,
-    GetParams,
-    KeysParams,
-    SetParams,
-    SetTokenParams,
-    TokenParams,
+  DeleteManyParams,
+  DeleteParams,
+  ExistsParams,
+  ExpireParams,
+  GetParams,
+  KeysParams,
+  SetParams,
+  SetTokenParams,
+  TokenParams,
 } from "../interfaces/redis.repo.interface.js";
 import { ErrorResponse } from "../response/error-response.js";
 import { createClient, RedisClientType } from "redis";
@@ -18,45 +18,45 @@ import { config } from "dotenv";
 class RedisService {
 
   private redisClient: RedisClientType;
-constructor() {
+  constructor() {
     config();
 
     const redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
-        throw new Error("REDIS_URL is missing from environment variables");
+      throw new Error("REDIS_URL is missing from environment variables");
     }
 
     this.redisClient = createClient({
-        url: redisUrl,
+      url: redisUrl,
     });
 
     this.handleErrorEvent();
-}
+  }
 
-public async connection(): Promise<void> {
+  public async connection(): Promise<void> {
     if (this.redisClient.isOpen) {
-        return;
+      return;
     }
 
     try {
-        await this.redisClient.connect();
-        console.log("Redis connected successfully...");
+      await this.redisClient.connect();
+      console.log("Redis connected successfully...");
     } catch (error) {
-        console.error("Redis connection error:", error);
-        throw new ErrorResponse(
-            "Redis connection failed",
-            StatusCodes.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            error
-        );
+      console.error("Redis connection error:", error);
+      throw new ErrorResponse(
+        "Redis connection failed",
+        StatusCodes.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+        error
+      );
     }
-}
+  }
 
-private handleErrorEvent = (): void => {
+  private handleErrorEvent = (): void => {
     this.redisClient.on("error", (err) => {
-        console.error("Redis client error:", err);
+      console.error("Redis client error:", err);
     });
-};
+  };
 
   async get({ key }: GetParams): Promise<unknown | null> {
     const result = await this.redisClient.get(key);
@@ -80,18 +80,18 @@ private handleErrorEvent = (): void => {
   async incrWithExpire({
     key,
     ttl,
-}: {
+  }: {
     key: string;
     ttl: number;
-}): Promise<number> {
+  }): Promise<number> {
     const totalHits = await this.redisClient.incr(key);
 
     if (totalHits === 1) {
-        await this.redisClient.expire(key, ttl);
+      await this.redisClient.expire(key, ttl);
     }
 
     return totalHits;
-}
+  }
 
 
   async decr({ key }: GetParams): Promise<number> {
@@ -283,17 +283,17 @@ private handleErrorEvent = (): void => {
     email: string;
   }): string => `OTP::FORGET_PASSWORD::${email}`;
 
-forgetOtpRequestCountKey = ({
-  email,
-}: {
-  email: string;
-}): string => `OTP::FORGET_PASSWORD::REQUEST_COUNT::${email}`;
+  forgetOtpRequestCountKey = ({
+    email,
+  }: {
+    email: string;
+  }): string => `OTP::FORGET_PASSWORD::REQUEST_COUNT::${email}`;
 
-forgetOtpAttemptCountKey = ({
-  email,
-}: {
-  email: string;
-}): string => `OTP::FORGET_PASSWORD::ATTEMPT_COUNT::${email}`;
+  forgetOtpAttemptCountKey = ({
+    email,
+  }: {
+    email: string;
+  }): string => `OTP::FORGET_PASSWORD::ATTEMPT_COUNT::${email}`;
 
   forgetTokenKey = ({
     token,
@@ -306,6 +306,38 @@ forgetOtpAttemptCountKey = ({
   }: {
     email: string;
   }): string => `TOKEN::FORGET_PASSWORD::COUNT::${email}`;
+
+  FCMTokenKey = (user_id: string): string => {
+    return `FCM::${user_id}`;
+  }
+
+  setFCMToken = async (
+    user_id: string,
+    token: string
+  ) => {
+    return await this.redisClient.sAdd(
+      this.FCMTokenKey(user_id),
+      token
+    )
+  }
+
+  getFCMToken = async (
+    user_id: string
+  ) => {
+    return await this.redisClient.sMembers(
+      this.FCMTokenKey(user_id)
+    )
+  }
+
+  deleteFCMToken = async (
+    user_id: string,
+    token: string
+  ) => {
+    return await this.redisClient.sRem(
+      this.FCMTokenKey(user_id),
+      token
+    )
+  }
 
 }
 

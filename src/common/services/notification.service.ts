@@ -40,5 +40,6 @@ class NotificationService {
 }
 
 const notificationService=new NotificationService();
+export type NotificationServiceType = typeof notificationService;
 export default notificationService;
 

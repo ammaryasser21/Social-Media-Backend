@@ -110,12 +110,13 @@ export const userIdSchema = z.object({
   }).strict(),
 }).strict();
 
-export const objectIdSchema = z.string().refine(
-  (value) => Types.ObjectId.isValid(value),
-  {
-    message: "Invalid ID"
-  }
-);
+export const objectIdSchema = z
+    .string()
+    .refine(
+        (value) => Types.ObjectId.isValid(value),
+        "Invalid ObjectId"
+    )
+    .transform((value) => new Types.ObjectId(value));
 
 export const passwordMatchSchema = z
   .object({

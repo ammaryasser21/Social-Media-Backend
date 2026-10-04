@@ -1,11 +1,31 @@
-import { CreateOptions, DeleteResult, FlattenMaps, HydratedDocument, Model, MongooseUpdateQueryOptions, PopulateOptions, ProjectionType, QueryFilter, QueryOptions, Types, UpdateQuery, UpdateResult } from 'mongoose';
+import {
+    CreateOptions,
+    DeleteResult,
+    FlattenMaps,
+    HydratedDocument,
+    Model,
+    MongooseUpdateQueryOptions,
+    PopulateOptions,
+    ProjectionType,
+    QueryFilter,
+    QueryOptions,
+    Types,
+    UpdateQuery,
+    UpdateResult
+} from 'mongoose';
+
 import { NotFoundResponse } from '../../common/response';
+
 export abstract class BaseRepositry<T> {
 
     constructor(
         private model: Model<T>,
         private entityName: string
     ) { }
+
+    // =========================
+    // CREATE
+    // =========================
 
     create({
         data,
@@ -33,6 +53,11 @@ export abstract class BaseRepositry<T> {
         return this.model.create(data as any, options);
     }
 
+
+    // =========================
+    // FIND ONE
+    // =========================
+
     findOne({
         filter,
         projection,
@@ -62,16 +87,62 @@ export abstract class BaseRepositry<T> {
         projection?: ProjectionType<T>,
         options?: QueryOptions<T>
     }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
-        const docs = this.model.findOne(filter, projection);
-        if (options?.lean) {
-            docs.lean();
-        }
-        if (options?.populate) {
-            docs.populate(options.populate as PopulateOptions);
-        }
+        const query = this.model.findOne(
+            filter,
+            projection,
+            options
+        );
 
-        return docs;
+        return query.exec();
     }
+
+
+    // =========================
+    // FIND
+    // =========================
+
+    find({
+        filter,
+        projection,
+        options
+    }: {
+        filter?: QueryFilter<T>,
+        projection?: ProjectionType<T>,
+        options?: QueryOptions<T> & { lean: false }
+    }): Promise<HydratedDocument<T>[]>;
+
+    find({
+        filter,
+        projection,
+        options
+    }: {
+        filter?: QueryFilter<T>,
+        projection?: ProjectionType<T>,
+        options?: QueryOptions<T> & { lean: true }
+    }): Promise<FlattenMaps<T>[]>;
+
+    find({
+        filter,
+        projection,
+        options
+    }: {
+        filter?: QueryFilter<T>,
+        projection?: ProjectionType<T>,
+        options?: QueryOptions<T>
+    }): Promise<HydratedDocument<T>[] | FlattenMaps<T>[]> {
+        const query = this.model.find(
+            filter,
+            projection,
+            options
+        );
+
+        return query.exec();
+    }
+
+
+    // =========================
+    // FIND BY ID
+    // =========================
 
     findById({
         id,
@@ -102,16 +173,19 @@ export abstract class BaseRepositry<T> {
         projection?: ProjectionType<T>,
         options?: QueryOptions<T>
     }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
-        const docs = this.model.findById(id, projection);
-        if (options?.lean) {
-            docs.lean();
-        }
-        if (options?.populate) {
-            docs.populate(options.populate as PopulateOptions);
-        }
+        const query = this.model.findById(
+            id,
+            projection,
+            options
+        );
 
-        return docs;
+        return query.exec();
     }
+
+
+    // =========================
+    // UPDATE ONE
+    // =========================
 
     updateOne({
         filter,
@@ -121,10 +195,14 @@ export abstract class BaseRepositry<T> {
         filter: QueryFilter<T>,
         update: UpdateQuery<T>,
         options?: MongooseUpdateQueryOptions
-
     }): Promise<UpdateResult> {
         return this.model.updateOne(filter, update, options);
     }
+
+
+    // =========================
+    // UPDATE MANY
+    // =========================
 
     updateMany({
         filter,
@@ -134,30 +212,40 @@ export abstract class BaseRepositry<T> {
         filter: QueryFilter<T>,
         update: UpdateQuery<T>,
         options?: MongooseUpdateQueryOptions
-
     }): Promise<UpdateResult> {
         return this.model.updateMany(filter, update, options);
     }
+
+
+    // =========================
+    // DELETE ONE
+    // =========================
 
     deleteOne({
         filter
     }: {
         filter: QueryFilter<T>
-
     }): Promise<DeleteResult> {
         return this.model.deleteOne(filter);
     }
+
+
+    // =========================
+    // DELETE MANY
+    // =========================
 
     deleteMany({
         filter
     }: {
         filter: QueryFilter<T>
-
     }): Promise<DeleteResult> {
         return this.model.deleteMany(filter);
     }
 
 
+    // =========================
+    // FIND ONE AND UPDATE
+    // =========================
 
     findOneAndUpdate({
         filter,
@@ -179,7 +267,6 @@ export abstract class BaseRepositry<T> {
         options?: QueryOptions<T> & { lean: true }
     }): Promise<FlattenMaps<T> | null>;
 
-
     findOneAndUpdate({
         filter,
         update,
@@ -188,15 +275,13 @@ export abstract class BaseRepositry<T> {
         filter: QueryFilter<T>,
         update: UpdateQuery<T>,
         options?: QueryOptions<T>
-
     }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
-        const docs = this.model.findOneAndUpdate(filter, update, options)
-        if (options?.lean) {
-            docs.lean();
-        }
+        const query = this.model.findOneAndUpdate(
+            filter,
+            update,
+            options
+        );
 
-        return docs;
+        return query.exec();
     }
-
-
 }
