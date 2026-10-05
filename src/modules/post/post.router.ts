@@ -3,6 +3,8 @@ import { Router } from "express";
 import {
     createPost,
     findPost,
+    reactPost,
+    updatePost,
 } from "./post.controller";
 
 import {
@@ -18,6 +20,8 @@ import cloudUpload from "../../common/utils/cloud-multer";
 import {
     createPostSchema,
     findPostSchema,
+    reactPostSchema,
+    updatePostSchema,
 } from "./post.validation";
 
 import { auth } from "../../middleware/auth.middlware";
@@ -44,6 +48,39 @@ postRouter.post(
     validation(createPostSchema),
     createPost
 );
+// ======================================================
+// UPDATE POST
+// ======================================================
+
+postRouter.patch(
+    "/:id",
+    auth,
+    cloudUpload({
+        storageType: STORAGE_TYPES.DISK,
+        folder: "posts",
+        fileValidation: MIME_TYPES.IMAGE,
+        upload: {
+            way: UPLOAD_WAY.ARRAY,
+            fieldName: "attachments",
+            maxCount: 10,
+        },
+    }),
+    validation(updatePostSchema),
+    updatePost
+);
+
+
+// ======================================================
+// UPDATE POST
+// ======================================================
+
+postRouter.patch(
+    "/:id/react",
+    auth,
+    validation(reactPostSchema),
+    reactPost
+);
+
 
 // ======================================================
 // FIND POST

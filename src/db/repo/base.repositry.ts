@@ -11,7 +11,8 @@ import {
     QueryOptions,
     Types,
     UpdateQuery,
-    UpdateResult
+    UpdateResult,
+    UpdateWithAggregationPipeline
 } from 'mongoose';
 
 import { NotFoundResponse } from '../../common/response';
@@ -254,7 +255,7 @@ export abstract class BaseRepositry<T> {
     }: {
         filter: QueryFilter<T>,
         update: UpdateQuery<T>,
-        options?: QueryOptions<T> & { lean: false }
+        options?: QueryOptions<T> & { lean?: false }
     }): Promise<HydratedDocument<T> | null>;
 
     findOneAndUpdate({
@@ -267,22 +268,31 @@ export abstract class BaseRepositry<T> {
         options?: QueryOptions<T> & { lean: true }
     }): Promise<FlattenMaps<T> | null>;
 
+
     findOneAndUpdate({
         filter,
         update,
         options
     }: {
         filter: QueryFilter<T>,
-        update: UpdateQuery<T>,
-        options?: QueryOptions<T>
+        update: UpdateQuery<T>  | UpdateWithAggregationPipeline,
+        options?: QueryOptions<T> | null
     }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
-        const query = this.model.findOneAndUpdate(
+
+        const docs = this.model.findOneAndUpdate(
             filter,
             update,
-            options
+            {
+                ...options,
+                new:true
+            }
         );
 
-        return query.exec();
+        if (options?.lean) docs.lean();
+
+        if (options?.populate) docs.populate(options.populate as PopulateOptions);
+
+        return docs.exec();
     }
 
 

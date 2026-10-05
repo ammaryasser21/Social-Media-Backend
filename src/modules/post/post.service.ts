@@ -1,3 +1,4 @@
+import { Express } from 'express';
 import
 notificationService,
 { NotificationServiceType }
@@ -14,13 +15,16 @@ import { PostRepositry } from "../../db/repo/post.repositry";
 import { UserHydrated } from "../../db/models/user.model";
 
 import {
-    ICreatePost
+    ICreatePost,
+    IUpdatePost,
+    IUpdatePostBody
 } from "./post.dto";
 
 import { IPost } from "../../common/interfaces/post.interface";
 import { UserRepositry } from "../../db/repo/user.repositry";
 import { PaginationQuery } from '../../common/utils/general-validate-schema';
 import { AvailableEnum } from '../../common/enums/available';
+import { Types } from 'mongoose';
 
 
 class PostService {
@@ -74,18 +78,6 @@ class PostService {
             });
 
             if (!users.length) throw new NotFoundResponse("Users not founded");
-
-            // let mentions = [];
-
-            // for (const tag of data.tags) {
-            //     mentions.push(tag);
-
-            //     const tokens = await this.redisService.getFCMToken(String(tag));
-            //     tokens.forEach((e) => {
-            //         FCM_Tokens_mentions.push(e);
-            //     })
-
-            // }
 
             const tokenResults = await Promise.all(
                 tags.map(tag => this.redisService.getFCMToken(String(tag)))
@@ -154,21 +146,6 @@ class PostService {
     ) {
 
         const { page, limit, search } = filter;
-        // const post = await this.postRepo.findOne({
-
-        //     filter: {
-        //         _id: data,
-        //         deletedAt: {
-        //             $exists: false,
-        //         },
-        //     },
-
-        //     options: {
-        //         lean: false,
-        //     },
-
-        // });
-
         const posts = await this.postRepo.paginate({
             filter: {
                 $or: [
@@ -186,8 +163,8 @@ class PostService {
                         }
                     },
                     {
-                        tags:{
-                            $in:[user._id]
+                        tags: {
+                            $in: [user._id]
                         }
                     }
                 ],
@@ -212,6 +189,189 @@ class PostService {
 
 
         return posts;
+    }
+
+
+
+    // ======================================================
+    // UPDATE POST
+    // ======================================================
+
+    async updatePost(
+        postId: string,
+        body: IUpdatePostBody,
+        files: Express.Multer.File[],
+        user: UserHydrated
+    ) {
+
+
+        const {
+            tags,
+            remove_tags,
+            remove_attachments,
+            content,
+            available
+        } = body;
+
+        let attachments: string[] = [];
+        let FCM_Tokens_mentions: string[] = [];
+
+        if (tags?.length) {
+
+            const users = await this.userRepo.find({
+                filter: {
+                    _id: {
+                        $in: tags,
+                    },
+                },
+                projection: {
+                    select: "_id",
+
+                }
+            });
+
+            if (!users.length) throw new NotFoundResponse("Users not founded");
+
+            const tokenResults = await Promise.all(
+                tags.map(tag => this.redisService.getFCMToken(String(tag)))
+            );
+
+            FCM_Tokens_mentions.push(
+                ...tokenResults.flat()
+            );
+        }
+
+        if (files?.length) {
+            attachments = await s3Service.uploadFiles({
+                files,
+                folder: "posts",
+                path: String(user._id),
+            });
+
+        }
+
+        const updatedPost = await this.postRepo.findOneAndUpdate({
+            filter: {
+                _id: new Types.ObjectId(postId),
+                createdBy: user._id
+            },
+            update: [{
+                $set: {
+                    ...(content && { content }),
+                    ...(available && { available }),
+                    updated_by: user._id,
+                    attachments: {
+                        $setUnion: [
+                            {
+                                $setDifference: ["$attachments", remove_attachments],
+                            },
+                            attachments
+                        ]
+                    },
+                    tags: {
+                        $setUnion: [
+                            {
+                                $setDifference: ["$tags", remove_tags],
+                            },
+                            attachments
+                        ]
+                    }
+
+                }
+            }]
+        })
+
+        if (!updatedPost) throw new BadRequestResponse("Post not found and updated");
+
+        if (!updatedPost && attachments.length) {
+
+            await s3Service.deleteFiles({
+                files: attachments,
+            });
+            throw new BadRequestResponse("Post not updated");
+
+        }
+
+        if (remove_attachments?.length) {
+            await s3Service.deleteFiles({
+                files: remove_attachments,
+            });
+
+        }
+
+
+        if (FCM_Tokens_mentions.length) {
+            await Promise.allSettled(
+                FCM_Tokens_mentions.map((token) =>
+                    this.notificationService.sendNotification({
+                        token,
+                        title: `Post Updated`,
+                        data: `${user.first_name} mentioned for you on his post`
+                    })
+                )
+            );
+
+        }
+
+        return updatedPost;
+    }
+
+    async reactPost(
+        postId: string,
+        user: UserHydrated
+    ) {
+
+        const post = await this.postRepo.findOne({
+            filter: {
+                _id:new Types.ObjectId(postId),
+                $or: [
+                    {
+                        available: AvailableEnum.PUBLIC
+                    },
+                    {
+                        available: AvailableEnum.PRIVATE,
+                        createdBy: user._id
+                    },
+                    {
+                        available: AvailableEnum.FRIENDS,
+                        createdBy: {
+                            $in: [user._id, ...(user.friends || [])]
+                        }
+                    },
+                    {
+                        tags: {
+                            $in: [user._id]
+                        }
+                    }
+                ]
+            }
+        });
+
+        if(!post) throw new NotFoundResponse("Post not found");
+        if(post.likes?.includes(user._id)){
+            return await this.postRepo.findOneAndUpdate({
+                filter:{
+                    _id:new Types.ObjectId(postId)
+                },
+                update:{
+                    $pull:{
+                        likes:user._id
+                    }
+                }
+            })
+        }
+
+        return await this.postRepo.findOneAndUpdate({
+                filter:{
+                    _id:new Types.ObjectId(postId)
+                },
+                update:{
+                    $addToSet:{
+                        likes:user._id
+                    }
+                }
+            })
+
     }
 
 }

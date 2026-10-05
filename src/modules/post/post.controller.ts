@@ -15,6 +15,7 @@ import {
 import postService from "./post.service";
 
 import { UserHydrated } from "../../db/models/user.model";
+import { IUpdatePostBody, IUpdatePostFiles } from "./post.dto";
 
 
 // ======================================================
@@ -64,7 +65,7 @@ export const findPost = async (
 
     try {
         const { postId } = req.params;
-  
+
         if (!postId) throw new BadRequestResponse("Post id not found");
         const post = await postService.findPost(
             req.query,
@@ -75,6 +76,70 @@ export const findPost = async (
             res,
             status: StatusCodes.SUCCESS.OK,
             message: "Post retrieved successfully",
+            data: post,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ======================================================
+// UPDATE POST
+// ======================================================
+
+export const updatePost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+
+    try {
+        const postId = req.params.id;
+
+        if (!postId) throw new BadRequestResponse("Post id not found");
+        const post = await postService.updatePost(
+            postId as string,
+            req.body as IUpdatePostBody,
+            req.files as Express.Multer.File[],
+            req.user as UserHydrated
+        );
+
+        return successResponse({
+            res,
+            status: StatusCodes.SUCCESS.OK,
+            message: "Post updated successfully",
+            data: post,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ======================================================
+// UPDATE POST
+// ======================================================
+
+export const reactPost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+
+    try {
+        const postId = req.params.id;
+
+        if (!postId) throw new BadRequestResponse("Post id not found");
+        const post = await postService.reactPost(
+            postId as string,
+            req.user as UserHydrated
+        );
+
+        return successResponse({
+            res,
+            status: StatusCodes.SUCCESS.OK,
+            message: "Post updated successfully",
             data: post,
         });
     } catch (error) {
