@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
     generalSchema,
     objectIdSchema,
+    PaginationQuerySchema,
 } from "../../common/utils/general-validate-schema";
 
 import { AvailableEnum } from "../../common/enums/available";
@@ -88,6 +89,7 @@ export const findPostSchema = {
         postId: objectIdSchema,
 
     }),
+    query:PaginationQuerySchema
 
 };
 

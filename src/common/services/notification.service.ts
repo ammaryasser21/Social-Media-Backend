@@ -1,45 +1,47 @@
-// import admin from "firebase-admin";
-
 import { App, cert, initializeApp } from "firebase-admin";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { ISendNotification } from "../interfaces/notification.interface";
 import { getMessaging } from "firebase-admin/messaging";
+import { ISendNotification } from "../interfaces/notification.interface";
+
+
 
 class NotificationService {
     private client: App;
-    constructor() {
-        const serviceAccount = JSON.parse(readFileSync(
-            resolve(
-                __dirname,
-                "../config/social-media-app-route-firebase-adminsdk-fbsvc-c5ae11bf35social-media-app-route-firebase-adminsdk-fbsvc-c5ae11bf35.json"
-            ),
-            "utf-8"
-        ));
 
+    constructor() {
+        const {
+            FIREBASE_PROJECT_ID,
+            FIREBASE_CLIENT_EMAIL,
+            FIREBASE_PRIVATE_KEY,
+        } = process.env;
+        const projectId = FIREBASE_PROJECT_ID as string;
+        const clientEmail = FIREBASE_CLIENT_EMAIL as string;
+        const privateKey = FIREBASE_PRIVATE_KEY as string;
         this.client = initializeApp({
-            credential: cert(serviceAccount)
+            credential: cert({
+                projectId,
+                clientEmail,
+                privateKey: privateKey.replace(/\\n/g, "\n"),
+            }),
         });
     }
-
 
     async sendNotification({
         token,
         title,
-        data
+        data,
     }: ISendNotification) {
-
         await getMessaging(this.client).send({
             token,
             notification: {
                 title,
-                body: data
-            }
-        })
+                body: data,
+            },
+        });
     }
 }
 
-const notificationService=new NotificationService();
-export type NotificationServiceType = typeof notificationService;
-export default notificationService;
+const notificationService = new NotificationService();
 
+export type NotificationServiceType = typeof notificationService;
+
+export default notificationService;

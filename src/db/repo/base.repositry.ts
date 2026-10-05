@@ -284,4 +284,37 @@ export abstract class BaseRepositry<T> {
 
         return query.exec();
     }
+
+
+    // =========================
+    // FIND WITH PAGINATION
+    // =========================
+
+    async paginate({
+        filter,
+        projection,
+        options,
+        page = 1,
+        limit = 10,
+    }: {
+        filter?: QueryFilter<T>;
+        projection?: ProjectionType<T> | null | undefined;
+        options?: QueryOptions<T>;
+        page?: number;
+        limit?: number;
+    }) {
+        const docs = this.model.find(filter, projection, options);
+        if (page) docs.skip((page - 1) * limit);
+        if (limit) docs.limit(limit);
+        if (options?.lean) docs.lean();
+
+        const data = await docs.exec();
+        const count = await this.model.countDocuments(filter);
+        return {
+            data,
+            limit,
+            currentPage: page,
+            totalPages: Math.ceil(count / limit),
+        }
+    }
 }

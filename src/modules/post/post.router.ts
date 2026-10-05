@@ -22,61 +22,38 @@ import {
 
 import { auth } from "../../middleware/auth.middlware";
 
-
 const postRouter = Router();
-
 
 // ======================================================
 // CREATE POST
 // ======================================================
 
 postRouter.post(
-
     "/",
-
     auth,
-
     cloudUpload({
-
         storageType: STORAGE_TYPES.DISK,
-
         folder: "posts",
-
         fileValidation: MIME_TYPES.IMAGE,
-
         upload: {
-
             way: UPLOAD_WAY.ARRAY,
-
             fieldName: "attachments",
-
             maxCount: 10,
-
         },
-
     }),
-
     validation(createPostSchema),
-
     createPost
-
 );
-
 
 // ======================================================
 // FIND POST
 // ======================================================
 
 postRouter.get(
-
-    "/:postId",
-
+    "/",
     auth,
-
     validation(findPostSchema),
-
     findPost
-
 );
 
 

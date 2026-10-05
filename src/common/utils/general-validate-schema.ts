@@ -15,8 +15,8 @@ export const emailSchema = z
   .trim();
 
 export const passwordSchema = z
-    .string({ error: "Password must be a string" })
-    .min(8, "Password must be at least 8 characters long");
+  .string({ error: "Password must be a string" })
+  .min(8, "Password must be at least 8 characters long");
 
 export const phoneSchema = z
   .string({ error: "Phone number must be a string" })
@@ -26,10 +26,10 @@ export const phoneSchema = z
   );
 
 export const ageSchema = z
-    .number({ error: "Age must be a number" })
-    .int("Age must be an integer")
-    .min(18, "Age must be at least 18")
-    .max(60, "Age must be at most 60");
+  .number({ error: "Age must be a number" })
+  .int("Age must be an integer")
+  .min(18, "Age must be at least 18")
+  .max(60, "Age must be at most 60");
 
 export const roleSchema = z.enum(
   Object.values(Roles) as [
@@ -55,28 +55,28 @@ export const isActiveSchema = z.preprocess(
 ).default(true);
 
 export const fileSchema = z.object({
-    fieldname: z.string(),
-    originalname: z.string(),
-    encoding: z.string(),
-    mimetype: z.string(),
-    size: z.number().nonnegative(),
+  fieldname: z.string(),
+  originalname: z.string(),
+  encoding: z.string(),
+  mimetype: z.string(),
+  size: z.number().nonnegative(),
 
-    destination: z.string().optional(),
-    filename: z.string().optional(),
-    path: z.string().optional(),
+  destination: z.string().optional(),
+  filename: z.string().optional(),
+  path: z.string().optional(),
 
-    finalPath: z.string().optional(),
+  finalPath: z.string().optional(),
 
-    buffer: z.instanceof(Buffer).optional(),
+  buffer: z.instanceof(Buffer).optional(),
 }).strict();
 
 export const imageFileSchema = fileSchema.extend({
-    mimetype: z.enum(
-        Object.values(MIME_TYPES.IMAGE) as [
-            string,
-            ...string[]
-        ]
-    ),
+  mimetype: z.enum(
+    Object.values(MIME_TYPES.IMAGE) as [
+      string,
+      ...string[]
+    ]
+  ),
 });
 
 
@@ -111,12 +111,12 @@ export const userIdSchema = z.object({
 }).strict();
 
 export const objectIdSchema = z
-    .string()
-    .refine(
-        (value) => Types.ObjectId.isValid(value),
-        "Invalid ObjectId"
-    )
-    .transform((value) => new Types.ObjectId(value));
+  .string()
+  .refine(
+    (value) => Types.ObjectId.isValid(value),
+    "Invalid ObjectId"
+  )
+  .transform((value) => new Types.ObjectId(value));
 
 export const passwordMatchSchema = z
   .object({
@@ -133,3 +133,10 @@ export const passwordMatchSchema = z
       message: "Confirm password must match the password",
     }
   );
+
+export const PaginationQuerySchema = z.strictObject({
+  page: z.int().default(1).optional(),
+  limit: z.int().default(10).optional(),
+  search: z.string().optional(),
+});
+export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;

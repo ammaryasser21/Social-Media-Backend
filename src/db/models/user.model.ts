@@ -9,6 +9,7 @@ import { userStatus } from "../../common/enums/user_status.js";
 import { Gender } from "../../common/enums/gender.js";
 import { Roles } from "../../common/enums/roles.js";
 import { IUser } from "../../common/interfaces/user.interface.js";
+import { Types } from "mongoose";
 
 export type UserHydrated = HydratedDocument<IUser>;
 
@@ -125,7 +126,12 @@ const userSchema = new Schema<IUser>(
       minLength: 10,
     },
 
+    friends:{
+      type:[Types.ObjectId],
+      ref:"User"
+    },
     changeCredentials: Date,
+    deletedAt:Date
   },
 
   {

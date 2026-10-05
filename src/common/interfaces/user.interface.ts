@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { Gender } from "../enums/gender";
 import { Roles } from "../enums/roles";
 import { System } from "../enums/system";
@@ -36,4 +37,5 @@ export interface IUser {
     updatedAt?: Date;
     deletedAt?: Date;
     full_name?: string;
+    friends?:Types.ObjectId[]
 }

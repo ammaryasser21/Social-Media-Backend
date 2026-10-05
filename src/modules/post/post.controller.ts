@@ -15,8 +15,6 @@ import {
 import postService from "./post.service";
 
 import { UserHydrated } from "../../db/models/user.model";
-import { Types } from "mongoose";
-import { IFindPost } from "./post.dto";
 
 
 // ======================================================
@@ -28,19 +26,12 @@ export const createPost = async (
     res: Response,
     next: NextFunction
 ) => {
-
     try {
+        if (!req.user) throw new UnauthorizedResponse(
+            "Authentication required"
+        );
 
-        if (!req.user) {
-            throw new UnauthorizedResponse(
-                "Authentication required"
-            );
-        }
-
-
-        const files =
-            (req.files as Express.Multer.File[]) ?? [];
-
+        const files = (req.files as Express.Multer.File[]) ?? [];
 
         const post = await postService.createPost(
             req.body,
@@ -48,23 +39,15 @@ export const createPost = async (
             req.user as UserHydrated
         );
 
-
         return successResponse({
-
             res,
-
             status: StatusCodes.SUCCESS.CREATED,
-
             message: "Post created successfully",
-
             data: post,
-
         });
 
     } catch (error) {
-
         next(error);
-
     }
 };
 
@@ -80,29 +63,21 @@ export const findPost = async (
 ) => {
 
     try {
-
-        const {postId}=req.params
-        if(!postId) throw new BadRequestResponse("Post id not found");
-       const post = await postService.findPost(
-           postId as string
+        const { postId } = req.params;
+  
+        if (!postId) throw new BadRequestResponse("Post id not found");
+        const post = await postService.findPost(
+            req.query,
+            req.user as UserHydrated
         );
 
-
         return successResponse({
-
             res,
-
             status: StatusCodes.SUCCESS.OK,
-
             message: "Post retrieved successfully",
-
             data: post,
-
         });
-
     } catch (error) {
-
         next(error);
-
     }
 };
