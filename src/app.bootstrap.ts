@@ -1,3 +1,4 @@
+import { AnyUpload } from './common/interfaces/multer.interface';
 import express, { Express, NextFunction, Request, Response } from "express";
 // import "dotenv/config";
 import { config } from "dotenv";
@@ -11,9 +12,8 @@ import helmet from "helmet";
 import { limiter } from "./middleware";
 import DBconnection from "./db/connection";
 import { redisService } from "./common/services/redis.service";
-import { auth } from "./middleware/auth.middlware";
-import s3Service from "./common/services/s3.service";
-import { pipeline } from "node:stream/promises";
+import { createHandler } from "graphql-http/lib/use/express";
+import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from "graphql";
 const bootstrap = async () => {
 
     config({
@@ -33,16 +33,14 @@ const bootstrap = async () => {
     const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
     app.set("trust proxy", trustProxyHops);
 
-
-    // Apply the rate limiting middleware to all requests.
     app.use(limiter);
 
 
-    const frontendUrl = process.env.FRONTEND_URL;
 
     app.use(
         cors({
             origin: (origin, callback) => {
+                const frontendUrl = process.env.FRONTEND_URL;
                 // Allow non-browser clients such as Postman/curl.
                 if (!origin) return callback(null, true);
 
@@ -61,24 +59,6 @@ const bootstrap = async () => {
     app.use("/uploads",
         express.static(join(process.cwd(), "uploads"))
     );
-
-    // app.use("/uploads/*path", async (
-    //     req: Request,
-    //     res: Response,
-    //     next: NextFunction
-    // ) => {
-
-    //     const path = (req.params?.path as string[]).join("/");
-
-    //     const result = await s3Service.getFile({
-    //         fileName: path
-    //     })
-
-    //     await pipeline(result.Body as NodeJS.ReadableStream, res)
-
-    // }
-
-    // );
 
     app.get("/", (req: Request, res: Response, next: NextFunction): void => {
         successResponse({
@@ -101,6 +81,117 @@ const bootstrap = async () => {
         "/post",
         postRouter
     );
+
+
+
+
+    var schema = new GraphQLSchema({
+        // Query For getting data
+        query: new GraphQLObjectType({
+            // Every Object should have name and Object of fields
+            name: 'RootQueryType',
+            fields: {
+                //Here all Quiries
+                hello: {
+                    // Type Like string or boolen or object BUT in graphql types
+                    type: GraphQLString,
+                    // Ues args object to take input from user
+                    args: {
+                        name: {
+                            type: new GraphQLNonNull(GraphQLString),
+                            // defaultValue:"UserName"
+                        },
+                    },
+                    // Can accessing Args here from args
+                    resolve(
+                        parent: any,
+                        args: any,
+                        context: AnyUpload
+                    ) {
+                        //Logic here
+                        return `hello ${args.name}`;
+                    },
+                },
+
+                // age: {
+                //     type: GraphQLInt,
+                //     resolve() {
+                //         return 10
+                //     }
+                // },
+
+                // getUser: {
+                //     type: new GraphQLList(
+                //         new GraphQLObjectType({
+                //             name: "UserInfo",
+                //             fields: {
+                //                 name: { type: new GraphQLNonNull(GraphQLString) },
+                //                 age: { type: GraphQLInt },
+                //                 role: {
+                //                     type: new GraphQLEnumType({
+                //                         name: "userRole",
+                //                         values: {
+                //                             ADMIN: {
+                //                                 value: "admin"
+                //                             },
+                //                             USER: {
+                //                                 value: "user"
+                //                             },
+                //                         }
+
+                //                     }),
+                //                 }
+                //             }
+                //         }),
+                //     ),
+                //     resolve() {
+                //         return [
+                //             {
+                //                 name: "ammar",
+                //                 age: 23,
+                //                 role: "user"
+                //             },
+                //             {
+                //                 name: "ammar",
+                //                 age: 23,
+                //                 role: "admin"
+                //             },
+                //         ]
+                //     }
+                // }
+            },
+        }),
+        // mutation: new GraphQLObjectType({
+        //     // Every Object should have name and Object of fields
+        //     name: 'RootMutatuiomType',
+        //     fields: {
+        //         //Here all Quiries
+        //         hello: {
+        //             // Type Like string or boolen or object BUT in graphql types
+        //             type: GraphQLString,
+        //             resolve() {
+        //                 //Logic here
+        //                 return 'world';
+        //             },
+        //         },
+
+        //         age: {
+        //             type: GraphQLInt,
+        //             resolve() {
+        //                 return 10
+        //             }
+        //         }
+        //     },
+        // }),
+        // Mustation for update and delete and create
+        // Subscription
+    });
+
+    app.all(
+        "/graphql",
+        createHandler({ schema })
+    );
+
 
     app.use(globalErrorHandler);
 
