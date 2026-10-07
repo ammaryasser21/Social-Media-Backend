@@ -21,7 +21,7 @@ import {
 } from '../../common/utils/security/hash';
 
 import { UserHydrated } from '../../db/models/user.model';
-import { UserRepositry } from '../../db/repo/user.repositry';
+import { UserRepository } from '../../db/repo/user.repository';
 
 import {
   IgoogleLogin,
@@ -53,7 +53,7 @@ import notificationService, { NotificationServiceType } from '../../common/servi
 
 
 class AuthService {
-  private userRepo: UserRepositry;
+  private userRepo: UserRepository;
   private redisService: RedisServiceType;
   private tokenService: TokenServiceType;
   private CLIENT_ID: string;
@@ -62,7 +62,7 @@ class AuthService {
   private notificationService: NotificationServiceType;
 
   constructor() {
-    this.userRepo = new UserRepositry();
+    this.userRepo = new UserRepository();
     this.redisService = redisService;
     this.tokenService = tokenService;
     this.CLIENT_ID = process.env.CLIENT_ID ?? "";

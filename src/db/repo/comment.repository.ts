@@ -1,7 +1,7 @@
-import { BaseRepositry } from './base.repositry';
+import { BaseRepository } from './base.repository';
 import { Comment } from '../models/comment.model';
 import { IComment } from '../../common/interfaces/comment.interface';
-export class PostRepositry extends BaseRepositry<IComment> {
+export class CommentRepository extends BaseRepository<IComment> {
     constructor() {
         super(Comment, "Comment");
     }

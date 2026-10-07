@@ -17,7 +17,7 @@ import {
 
 import { NotFoundResponse } from '../../common/response';
 
-export abstract class BaseRepositry<T> {
+export abstract class BaseRepository<T> {
 
     constructor(
         private model: Model<T>,

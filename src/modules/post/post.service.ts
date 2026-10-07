@@ -1,8 +1,4 @@
-import { Express } from 'express';
-import
-notificationService,
-{ NotificationServiceType }
-    from './../../common/services/notification.service';
+import notificationService, { NotificationServiceType } from './../../common/services/notification.service';
 import { redisService, RedisServiceType } from './../../common/services/redis.service';
 import {
     BadRequestResponse,
@@ -11,36 +7,33 @@ import {
 
 import s3Service from "../../common/services/s3.service";
 
-import { PostRepositry } from "../../db/repo/post.repositry";
+import { PostRepository } from "../../db/repo/post.repository";
 import { UserHydrated } from "../../db/models/user.model";
 
 import {
     ICreatePost,
-    IUpdatePost,
     IUpdatePostBody
 } from "./post.dto";
 
 import { IPost } from "../../common/interfaces/post.interface";
-import { UserRepositry } from "../../db/repo/user.repositry";
+import { UserRepository } from "../../db/repo/user.repository";
 import { PaginationQuery } from '../../common/utils/general-validate-schema';
 import { AvailableEnum } from '../../common/enums/available';
 import { Types } from 'mongoose';
 
 
 class PostService {
-
-    private postRepo: PostRepositry;
-    private userRepo: UserRepositry;
+    private postRepo: PostRepository;
+    private userRepo: UserRepository;
     private redisService: RedisServiceType;
     private notificationService: NotificationServiceType;
 
     constructor() {
-        this.postRepo = new PostRepositry();
-        this.userRepo = new UserRepositry();
+        this.postRepo = new PostRepository();
+        this.userRepo = new UserRepository();
         this.redisService = redisService;
         this.notificationService = notificationService;
     }
-
 
     // ======================================================
     // CREATE POST
@@ -273,7 +266,7 @@ class PostService {
                             {
                                 $setDifference: ["$tags", remove_tags],
                             },
-                            attachments
+                            tags ?? []
                         ]
                     }
 
@@ -281,16 +274,19 @@ class PostService {
             }]
         })
 
-        if (!updatedPost) throw new BadRequestResponse("Post not found and updated");
+        if (!updatedPost) {
+            if (attachments.length) {
 
-        if (!updatedPost && attachments.length) {
+                await s3Service.deleteFiles({
+                    files: attachments,
+                });
+                throw new BadRequestResponse("Post not updated");
 
-            await s3Service.deleteFiles({
-                files: attachments,
-            });
-            throw new BadRequestResponse("Post not updated");
-
+            }
+            throw new BadRequestResponse("Post not found and updated");
         }
+
+
 
         if (remove_attachments?.length) {
             await s3Service.deleteFiles({
@@ -323,7 +319,7 @@ class PostService {
 
         const post = await this.postRepo.findOne({
             filter: {
-                _id:new Types.ObjectId(postId),
+                _id: new Types.ObjectId(postId),
                 $or: [
                     {
                         available: AvailableEnum.PUBLIC
@@ -347,30 +343,30 @@ class PostService {
             }
         });
 
-        if(!post) throw new NotFoundResponse("Post not found");
-        if(post.likes?.includes(user._id)){
+        if (!post) throw new NotFoundResponse("Post not found");
+        if (post.likes?.includes(user._id)) {
             return await this.postRepo.findOneAndUpdate({
-                filter:{
-                    _id:new Types.ObjectId(postId)
+                filter: {
+                    _id: new Types.ObjectId(postId)
                 },
-                update:{
-                    $pull:{
-                        likes:user._id
+                update: {
+                    $pull: {
+                        likes: user._id
                     }
                 }
             })
         }
 
         return await this.postRepo.findOneAndUpdate({
-                filter:{
-                    _id:new Types.ObjectId(postId)
-                },
-                update:{
-                    $addToSet:{
-                        likes:user._id
-                    }
+            filter: {
+                _id: new Types.ObjectId(postId)
+            },
+            update: {
+                $addToSet: {
+                    likes: user._id
                 }
-            })
+            }
+        })
 
     }
 

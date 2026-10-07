@@ -7,7 +7,7 @@ import {
 } from "../common/response";
 import { tokenTypes } from "../common/enums/token";
 import { tokenService } from "../common/services/token.service";
-import { UserRepositry } from "../db/repo/user.repositry";
+import { UserRepositry } from "../db/repo/user.repository";
 import { redisService } from "../common/services/redis.service";
 
 export const auth = async (

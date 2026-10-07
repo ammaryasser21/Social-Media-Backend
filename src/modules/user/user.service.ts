@@ -1,26 +1,26 @@
-import { DeleteObjectCommandOutput } from "@aws-sdk/client-s3";
-import { MIME_TYPES, STORAGE_TYPES } from "../../common/enums/multer";
-import { IDeleteFile, IGetFile, IUploadFiles, IUploadLargeFile, IUploadPresignedFile, IUploadPresignedFiles } from "../../common/interfaces/s3.interface";
-import { IUser } from "../../common/interfaces/user.interface";
-import { BadRequestResponse, ErrorResponse, NotFoundResponse } from "../../common/response";
-import { redisService, RedisServiceType } from "../../common/services/redis.service";
+import { 
+    IGetFile, 
+    IUploadFiles, 
+    IUploadLargeFile, 
+    IUploadPresignedFile 
+} from "../../common/interfaces/s3.interface";
+
+import { 
+    BadRequestResponse, 
+    ErrorResponse, 
+    NotFoundResponse 
+} from "../../common/response";
 import s3Service from "../../common/services/s3.service";
-import { tokenService, TokenServiceType } from "../../common/services/token.service";
-import { decrypt } from "../../common/utils/security/encrypt";
 import { UserHydrated } from "../../db/models/user.model";
-import { UserRepositry } from "../../db/repo/user.repositry";
+import { UserRepository } from "../../db/repo/user.repository";
 import StatusCodes from "../../common/enums/status";
 
 class UserService {
-    private userRepo: UserRepositry;
-    private redisService: RedisServiceType;
-    private tokenService: TokenServiceType;
+    private userRepo: UserRepository;
     private s3Service;
 
     constructor() {
-        this.userRepo = new UserRepositry();
-        this.redisService = redisService;
-        this.tokenService = tokenService;
+        this.userRepo = new UserRepository();
         this.s3Service = s3Service;
     }
 

@@ -139,7 +139,7 @@ export const reactPost = async (
         return successResponse({
             res,
             status: StatusCodes.SUCCESS.OK,
-            message: "Post updated successfully",
+            message: "Comment reaction updated successfully",
             data: post,
         });
     } catch (error) {

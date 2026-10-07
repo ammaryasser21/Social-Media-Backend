@@ -87,7 +87,7 @@ postRouter.patch(
 // ======================================================
 
 postRouter.get(
-    "/",
+    "/:postId",
     auth,
     validation(findPostSchema),
     findPost
