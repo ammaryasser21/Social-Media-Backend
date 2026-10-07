@@ -1,10 +1,10 @@
 export enum UPLOAD_WAY {
-  SINGLE="single",
-  ARRAY="array",
-  FIELDS= "fields",
-  ANY= "any",
-  NONE= "none",
-} ;
+  SINGLE = "single",
+  ARRAY = "array",
+  FIELDS = "fields",
+  ANY = "any",
+  NONE = "none",
+};
 
 // ─────────────────────────────────────────────
 // MIME TYPES
@@ -69,6 +69,6 @@ export type FileExtension =
 // ─────────────────────────────────────────────
 
 export enum STORAGE_TYPES {
-  DISK= "disk",
-  MEMORY= "memory",
+  DISK = "disk",
+  MEMORY = "memory",
 };

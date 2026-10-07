@@ -13,8 +13,8 @@ abstract class ApplicationException extends Error {
     }
 }
 
-export class ErrorResponse extends ApplicationException{
-        constructor(message: string,statusCode: number, cause?: unknown) {
+export class ErrorResponse extends ApplicationException {
+    constructor(message: string, statusCode: number, cause?: unknown) {
         super(
             message,
             statusCode,

@@ -12,17 +12,15 @@ export type FileFilter = (
     callback: FileFilterCallback
 ) => void;
 
-
 export interface CreateStorageOptions {
     storageType: STORAGE_TYPES;
     folder: string;
 }
 
-
 export interface LocalUploadOptions {
     storageType?: STORAGE_TYPES;
     folder?: string;
-    fileValidation?:readonly  string[];
+    fileValidation?: readonly string[];
     maxFileSize?: number;
     upload?: UploadConfig;
 }
@@ -30,7 +28,7 @@ export interface LocalUploadOptions {
 export interface CloudUploadOptions {
     storageType?: STORAGE_TYPES;
     folder?: string;
-    fileValidation?:readonly  string[];
+    fileValidation?: readonly string[];
     maxFileSize?: number;
     upload?: UploadConfig;
 }

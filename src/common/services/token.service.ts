@@ -105,58 +105,58 @@ class TokenService {
   // Decode Token
   // ==========================================
 
-verifyToken = (
+  verifyToken = (
     token: string,
     secret: string,
     audience: string
-): TokenPayload => {
+  ): TokenPayload => {
     const issuer = process.env.ISSUER;
 
     if (!issuer) {
-        throw new Error("ISSUER is missing from environment variables");
+      throw new Error("ISSUER is missing from environment variables");
     }
 
     const decoded = jwt.verify(token, secret, {
-        issuer,
-        audience,
+      issuer,
+      audience,
     });
 
     if (typeof decoded === "string" || !decoded) {
-        throw new BadRequestResponse("Invalid token payload");
+      throw new BadRequestResponse("Invalid token payload");
     }
 
     return decoded as TokenPayload;
-};
+  };
 
 
   // ==========================================
   // Verify Token
   // ==========================================
 
-decodeToken = async (
+  decodeToken = async (
     token: string,
     tokenType: tokenTypes
-): Promise<TokenPayload> => {
+  ): Promise<TokenPayload> => {
     const data = jwt.decode(token) as TokenPayload | null;
 
     if (!data || !data.role) {
-        throw new BadRequestResponse("Invalid token");
+      throw new BadRequestResponse("Invalid token");
     }
 
     const { accessSecret, refreshSecret } =
-        this.detectUserKeys(data.role);
+      this.detectUserKeys(data.role);
 
     const secret =
-        tokenType === tokenTypes.ACCESS
-            ? accessSecret
-            : refreshSecret;
+      tokenType === tokenTypes.ACCESS
+        ? accessSecret
+        : refreshSecret;
 
     return this.verifyToken(
-        token,
-        secret,
-        data.role
+      token,
+      secret,
+      data.role
     );
-};
+  };
 
 
   // ==========================================
@@ -165,7 +165,7 @@ decodeToken = async (
 
 
   createCredentials = (
-    user: HydratedDocument<IUser> 
+    user: HydratedDocument<IUser>
   ): Credentials => {
     const jti = randomUUID();
 

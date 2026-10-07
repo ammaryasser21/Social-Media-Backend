@@ -77,7 +77,7 @@ const createStorage = ({
                 fileName
             );
 
-            
+
 
             cb(null, fileName);
         },
@@ -105,7 +105,7 @@ const localUpload = ({
         folder,
     });
 
-    
+
 
     // --------------------------------------------------
     // Default File Filter

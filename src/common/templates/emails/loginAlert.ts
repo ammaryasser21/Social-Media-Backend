@@ -6,7 +6,7 @@ export const loginAlertEmail = ({
   device = "Unknown device",
   location = "Unknown location",
   date = new Date().toUTCString(),
-}:LoginAlertType) => {
+}: LoginAlertType) => {
   return layout({
     title: "New login detected",
     content: `

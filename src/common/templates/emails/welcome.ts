@@ -3,9 +3,9 @@ import layout from "./layout.js";
 export const welcomeEmail = ({
   name = "there",
   dashboardUrl,
-}:{
-  name:string,
-  dashboardUrl:string
+}: {
+  name: string,
+  dashboardUrl: string
 }) => {
   return layout({
     title: "Welcome",
@@ -30,9 +30,8 @@ export const welcomeEmail = ({
         Your account is ready. You can now start using the platform.
       </p>
 
-      ${
-        dashboardUrl
-          ? `
+      ${dashboardUrl
+        ? `
           <a
             href="${dashboardUrl}"
             style="
@@ -49,7 +48,7 @@ export const welcomeEmail = ({
             Go to Dashboard
           </a>
         `
-          : ""
+        : ""
       }
     `,
   });

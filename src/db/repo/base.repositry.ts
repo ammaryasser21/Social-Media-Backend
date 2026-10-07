@@ -275,7 +275,7 @@ export abstract class BaseRepositry<T> {
         options
     }: {
         filter: QueryFilter<T>,
-        update: UpdateQuery<T>  | UpdateWithAggregationPipeline,
+        update: UpdateQuery<T> | UpdateWithAggregationPipeline,
         options?: QueryOptions<T> | null
     }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
 
@@ -284,7 +284,7 @@ export abstract class BaseRepositry<T> {
             update,
             {
                 ...options,
-                new:true
+                new: true
             }
         );
 

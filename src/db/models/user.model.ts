@@ -136,7 +136,6 @@ const userSchema = new Schema<IUser>(
 
   {
     timestamps: true,
-    collection: "users",
 
     optimisticConcurrency: true,
 

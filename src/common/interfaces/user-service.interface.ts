@@ -1,10 +1,10 @@
-export type ConfirmEmailType ={
-    email:string,
-    otp:string
+export type ConfirmEmailType = {
+    email: string,
+    otp: string
 }
 
-export type PasswordType={
-    oldPassword:string,
-      newPassword:string,
-      confirmPassword:string
+export type PasswordType = {
+    oldPassword: string,
+    newPassword: string,
+    confirmPassword: string
 }

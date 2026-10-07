@@ -4,7 +4,7 @@ const emailLayout = ({
   title,
   content,
   appName = "Your App",
-}:EmailLayoutType) => {
+}: EmailLayoutType) => {
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -92,4 +92,4 @@ const emailLayout = ({
 `;
 };
 
-export default  emailLayout;
+export default emailLayout;

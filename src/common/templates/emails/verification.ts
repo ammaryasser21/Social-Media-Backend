@@ -3,9 +3,9 @@ import layout from "./layout.js";
 export const verificationEmail = ({
   name = "there",
   verificationUrl,
-}:{
-  name:string,
-  verificationUrl:string
+}: {
+  name: string,
+  verificationUrl: string
 }) => {
   return layout({
     title: "Verify your email",

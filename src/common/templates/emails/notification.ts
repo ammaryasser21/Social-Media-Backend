@@ -7,7 +7,7 @@ export const notificationEmail = ({
   message,
   buttonText,
   buttonUrl,
-}:NotificationTemplateType) => {
+}: NotificationTemplateType) => {
   return layout({
     title,
     content: `
@@ -31,9 +31,8 @@ export const notificationEmail = ({
         ${message}
       </p>
 
-      ${
-        buttonText && buttonUrl
-          ? `
+      ${buttonText && buttonUrl
+        ? `
             <a
               href="${buttonUrl}"
               style="
@@ -50,7 +49,7 @@ export const notificationEmail = ({
               ${buttonText}
             </a>
           `
-          : ""
+        : ""
       }
     `,
   });

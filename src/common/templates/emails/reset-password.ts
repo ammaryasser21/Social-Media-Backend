@@ -4,10 +4,10 @@ export const resetPasswordEmail = ({
   name = "there",
   resetUrl,
   expiresIn = "30 minutes",
-}:{
-  name:string,
-  resetUrl:string,
-  expiresIn:string
+}: {
+  name: string,
+  resetUrl: string,
+  expiresIn: string
 }) => {
   return layout({
     title: "Reset your password",

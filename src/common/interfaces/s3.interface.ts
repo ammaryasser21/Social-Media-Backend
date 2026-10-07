@@ -13,7 +13,7 @@ export type IUploadFile = {
 export type IUploadLargeFile = {
     partSize?: number
 } & IUploadFile;
-export type IUploadFiles ={
+export type IUploadFiles = {
     files: Express.Multer.File[],
     bucket?: string,
     folder: string,
@@ -28,8 +28,8 @@ export type IUploadPresignedFile = {
     path: string,
     contentType: string,
     expiresIn: number
-
 }
+
 export type IUploadPresignedFiles = {
     files: string[],
     bucket?: string,
@@ -37,7 +37,6 @@ export type IUploadPresignedFiles = {
     path: string,
     contentType: string,
     expiresIn: number
-
 }
 
 export type IGetFile = {
@@ -51,6 +50,7 @@ export type IDeleteFile = {
     fileName: string,
     bucket?: string,
 }
+
 export type IDeleteFiles = {
     files: string[],
     bucket?: string,

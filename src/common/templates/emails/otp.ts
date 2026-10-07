@@ -6,7 +6,7 @@ export const otpEmail = ({
   otp,
   title,
   expiresIn = "10 minutes",
-}:OtpTemplateType) => {
+}: OtpTemplateType) => {
   return layout({
     title: `${title}`,
     content: `

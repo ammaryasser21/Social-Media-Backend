@@ -8,8 +8,8 @@ export const sendEmail = async ({
     bcc = "",
     html = "",
     text = "",
-    attachments=[]
-}:SendEmailParams) => {
+    attachments = []
+}: SendEmailParams) => {
 
     const transporter = nodemailer.createTransport({
         service: "gmail",

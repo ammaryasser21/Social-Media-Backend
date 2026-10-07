@@ -11,7 +11,6 @@ export type SendEmailParams = {
     attachments?: Attachment[];
 };
 
-
 export type OtpTemplateType = {
     name?: string | undefined,
     otp: string,
@@ -19,23 +18,23 @@ export type OtpTemplateType = {
     expiresIn?: string,
 }
 
-export type EmailLayoutType={
-    title:string,
-    content:string,
-    appName?:string
+export type EmailLayoutType = {
+    title: string,
+    content: string,
+    appName?: string
 }
 
-export type LoginAlertType={
-     name:string,
-  device:string,
-  location:string,
-  date:string,
+export type LoginAlertType = {
+    name: string,
+    device: string,
+    location: string,
+    date: string,
 }
 
-export type NotificationTemplateType={
-  name :string,
-  title:string,
-  message:string,
-  buttonText:string,
-  buttonUrl:string,
+export type NotificationTemplateType = {
+    name: string,
+    title: string,
+    message: string,
+    buttonText: string,
+    buttonUrl: string,
 }

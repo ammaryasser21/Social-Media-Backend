@@ -134,7 +134,7 @@ export const reactPost = async (
         const post = await postService.reactPost(
             postId as string,
             req.user as UserHydrated
-        );
+        );                          
 
         return successResponse({
             res,

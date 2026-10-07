@@ -15,7 +15,7 @@ export type TokenPayload = JwtPayload & {
 };
 
 export type GenerateTokenOptions = {
-  data?:any;
+  data?: any;
   secret: string;
   expiresIn?: SignOptions["expiresIn"];
   audience?: string | string[];

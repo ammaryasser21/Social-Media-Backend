@@ -1,4 +1,4 @@
-export {successResponse} from "./success-response"
+export { successResponse } from "./success-response"
 export {
     ErrorResponse,
     NotFoundResponse,

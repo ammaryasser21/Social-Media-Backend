@@ -61,7 +61,6 @@ const postSchema = new Schema<IPost>(
 
     {
         timestamps: true,
-        collection: "posts",
 
         optimisticConcurrency: true,
 

@@ -1,4 +1,4 @@
 export enum System {
-  SYSTEM='system',
-  GMAIL= 'gmail'
+  SYSTEM = 'system',
+  GMAIL = 'gmail'
 };
