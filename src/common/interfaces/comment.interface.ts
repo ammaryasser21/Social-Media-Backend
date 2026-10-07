@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 export interface IComment {
   post_id: Types.ObjectId;
-  reply_to?: Types.ObjectId;
+  reply_to?: Types.ObjectId | undefined;
   content?: string;
   tags?: Types.ObjectId[];
   likes?: Types.ObjectId[];

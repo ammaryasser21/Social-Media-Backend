@@ -114,7 +114,10 @@ export const objectIdSchema = z
   .string()
   .refine(
     (value) => Types.ObjectId.isValid(value),
-    "Invalid ObjectId"
+    { 
+      path: ["id"], 
+      message: "Invalid ObjectId" 
+    }
   )
   .transform((value) => new Types.ObjectId(value));
 

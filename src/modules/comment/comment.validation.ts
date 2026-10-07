@@ -18,7 +18,7 @@ export const createCommentSchema = {
     body: z
         .strictObject({
             post_id: objectIdSchema,
-            reply_to: objectIdSchema,
+            reply_to: objectIdSchema.optional(),
             content: z
                 .string()
                 .trim()
@@ -75,28 +75,13 @@ export const createCommentSchema = {
 
 
 // ======================================================
-// FIND COMMENT
-// ======================================================
-
-export const findCommentSchema = {
-
-    params: z.strictObject({
-
-        commentId: objectIdSchema,
-
-    }),
-    query: PaginationQuerySchema
-
-};
-
-
-// ======================================================
 // UPDATE COMMENT
 // ======================================================
 
 export const updateCommentSchema = {
     body: z.strictObject({
-
+        post_id: objectIdSchema,
+        reply_to: objectIdSchema.optional(),
         content: z
             .string()
             .trim()

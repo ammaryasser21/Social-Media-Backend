@@ -2,7 +2,6 @@
 import { z } from "zod";
 import {
     createCommentSchema,
-    findCommentSchema,
     reactCommentSchema,
     updateCommentSchema,
 } from "./comment.validation";
@@ -11,9 +10,6 @@ export type ICreateComment = z.infer<typeof createCommentSchema.body>;
 export type IUpdateCommentBody = z.infer<typeof updateCommentSchema.body>;
 export type IUpdateCommentParams = z.infer<typeof updateCommentSchema.params>;
 export type IUpdateCommentFiles = z.infer<typeof updateCommentSchema.files>;
-
-export type IFindComment = z.infer<typeof findCommentSchema.params>;
-
 
 export type IUpdateComment = {
   body: IUpdateCommentBody,

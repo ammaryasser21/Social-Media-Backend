@@ -25,8 +25,17 @@ import {
 } from "./post.validation";
 
 import { auth } from "../../middleware/auth.middlware";
+import commentRouter from "../comment/comment.router";
 
 const postRouter = Router();
+
+postRouter.use(auth);
+
+// Comments branch
+postRouter.use(
+    "/:postId/comments", 
+    commentRouter
+);
 
 // ======================================================
 // CREATE POST
@@ -34,7 +43,6 @@ const postRouter = Router();
 
 postRouter.post(
     "/",
-    auth,
     cloudUpload({
         storageType: STORAGE_TYPES.DISK,
         folder: "posts",
@@ -54,7 +62,6 @@ postRouter.post(
 
 postRouter.patch(
     "/:id",
-    auth,
     cloudUpload({
         storageType: STORAGE_TYPES.DISK,
         folder: "posts",
@@ -76,7 +83,6 @@ postRouter.patch(
 
 postRouter.patch(
     "/:id/react",
-    auth,
     validation(reactPostSchema),
     reactPost
 );
@@ -88,7 +94,6 @@ postRouter.patch(
 
 postRouter.get(
     "/:postId",
-    auth,
     validation(findPostSchema),
     findPost
 );

@@ -33,8 +33,9 @@ export const createComment = async (
         );
 
         const files = (req.files as Express.Multer.File[]) ?? [];
-
+        const { postId } = req.params;
         const comment = await commentService.create(
+            postId as string,
             req.body,
             files,
             req.user as UserHydrated
@@ -52,36 +53,6 @@ export const createComment = async (
     }
 };
 
-
-// ======================================================
-// FIND COMMENT
-// ======================================================
-
-export const findComment = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-
-    try {
-        const { commentId } = req.params;
-
-        if (!commentId) throw new BadRequestResponse("Comment id not found");
-        const comment = await commentService.find(
-            req.query,
-            req.user as UserHydrated
-        );
-
-        return successResponse({
-            res,
-            status: StatusCodes.SUCCESS.OK,
-            message: "Comment retrieved successfully",
-            data: comment,
-        });
-    } catch (error) {
-        next(error);
-    }
-};
 
 
 // ======================================================
@@ -134,7 +105,7 @@ export const reactComment = async (
         const comment = await commentService.react(
             commentId as string,
             req.user as UserHydrated
-        );                          
+        );
 
         return successResponse({
             res,

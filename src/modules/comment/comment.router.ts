@@ -2,7 +2,6 @@ import { Router } from "express";
 
 import {
     createComment,
-    findComment,
     reactComment,
     updateComment,
 } from "./comment.controller";
@@ -19,14 +18,15 @@ import cloudUpload from "../../common/utils/cloud-multer";
 
 import {
     createCommentSchema,
-    findCommentSchema,
     reactCommentSchema,
     updateCommentSchema,
 } from "./comment.validation";
 
 import { auth } from "../../middleware/auth.middlware";
 
-const commentRouter = Router();
+const commentRouter = Router({
+    mergeParams:true
+});
 
 // ======================================================
 // CREATE COMMENT
@@ -79,18 +79,6 @@ commentRouter.patch(
     auth,
     validation(reactCommentSchema),
     reactComment
-);
-
-
-// ======================================================
-// FIND COMMENT
-// ======================================================
-
-commentRouter.get(
-    "/:commentId",
-    auth,
-    validation(findCommentSchema),
-    findComment
 );
 
 

@@ -94,15 +94,13 @@ const bootstrap = async () => {
 
     app.use(
         "/user",
-        auth,
         userRouter
     );
 
     app.use(
-    "/post",
-    auth,
-    postRouter
-);
+        "/post",
+        postRouter
+    );
 
     app.use(globalErrorHandler);
 

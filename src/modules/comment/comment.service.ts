@@ -1,8 +1,8 @@
 import notificationService, { NotificationServiceType } from '../../common/services/notification.service';
 
-import { 
-    redisService, 
-    RedisServiceType 
+import {
+    redisService,
+    RedisServiceType
 } from '../../common/services/redis.service';
 
 import {
@@ -18,9 +18,9 @@ import { PaginationQuery } from '../../common/utils/general-validate-schema';
 import { Types } from 'mongoose';
 import { CommentRepository } from '../../db/repo/comment.repository';
 
-import { 
-    ICreateComment, 
-    IUpdateCommentBody 
+import {
+    ICreateComment,
+    IUpdateCommentBody
 } from './comment.dto';
 
 
@@ -44,6 +44,7 @@ class CommentService {
     // ======================================================
 
     async create(
+        postId:string,
         data: ICreateComment,
         files: Express.Multer.File[] = [],
         user: UserHydrated
@@ -93,10 +94,13 @@ class CommentService {
             });
 
         }
-
+        let reply_to;
+        if (data?.reply_to) {
+            reply_to = data.reply_to;
+        }
         const commentData: IComment = {
-            post_id: data.post_id,
-            reply_to: data.reply_to,
+            post_id: new Types.ObjectId(postId),
+            reply_to,
             content: data?.content || "",
             tags: tags,
             attachments,
@@ -134,45 +138,6 @@ class CommentService {
     }
 
 
-    // ======================================================
-    // FIND COMMENT
-    // ======================================================
-
-    async find(
-        filter: PaginationQuery,
-        user: UserHydrated,
-    ) {
-
-        const { page, limit, search } = filter;
-        const comments = await this.commentRepo.paginate({
-            filter: {
-                tags: {
-                    $in: [user._id]
-                }
-                ,
-                ...(search && {
-                    content: {
-                        $regex: search,
-                        $options: "i",
-                    },
-                }),
-            },
-            limit: limit ?? 10,
-            page: page ?? 1,
-        });
-
-
-        if (!comments) {
-            throw new NotFoundResponse(
-                "Comment not found"
-            );
-        }
-
-
-        return comments;
-    }
-
-
 
     // ======================================================
     // UPDATE COMMENT
@@ -187,6 +152,7 @@ class CommentService {
 
 
         const {
+            post_id,
             tags,
             remove_tags,
             remove_attachments,
@@ -237,6 +203,7 @@ class CommentService {
             },
             update: [{
                 $set: {
+                    ...(post_id && { post_id }),
                     ...(content && { content }),
                     updated_by: user._id,
                     attachments: {
