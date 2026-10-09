@@ -14,6 +14,7 @@ import DBconnection from "./db/connection";
 import { redisService } from "./common/services/redis.service";
 import { createHandler } from "graphql-http/lib/use/express";
 import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from "graphql";
+import schema from './modules/gql/schema.gql';
 const bootstrap = async () => {
 
     config({
@@ -85,111 +86,11 @@ const bootstrap = async () => {
 
 
 
-    var schema = new GraphQLSchema({
-        // Query For getting data
-        query: new GraphQLObjectType({
-            // Every Object should have name and Object of fields
-            name: 'RootQueryType',
-            fields: {
-                //Here all Quiries
-                hello: {
-                    // Type Like string or boolen or object BUT in graphql types
-                    type: GraphQLString,
-                    // Ues args object to take input from user
-                    args: {
-                        name: {
-                            type: new GraphQLNonNull(GraphQLString),
-                            // defaultValue:"UserName"
-                        },
-                    },
-                    // Can accessing Args here from args
-                    resolve(
-                        parent: any,
-                        args: any,
-                        context: AnyUpload
-                    ) {
-                        //Logic here
-                        return `hello ${args.name}`;
-                    },
-                },
 
-                // age: {
-                //     type: GraphQLInt,
-                //     resolve() {
-                //         return 10
-                //     }
-                // },
-
-                // getUser: {
-                //     type: new GraphQLList(
-                //         new GraphQLObjectType({
-                //             name: "UserInfo",
-                //             fields: {
-                //                 name: { type: new GraphQLNonNull(GraphQLString) },
-                //                 age: { type: GraphQLInt },
-                //                 role: {
-                //                     type: new GraphQLEnumType({
-                //                         name: "userRole",
-                //                         values: {
-                //                             ADMIN: {
-                //                                 value: "admin"
-                //                             },
-                //                             USER: {
-                //                                 value: "user"
-                //                             },
-                //                         }
-
-                //                     }),
-                //                 }
-                //             }
-                //         }),
-                //     ),
-                //     resolve() {
-                //         return [
-                //             {
-                //                 name: "ammar",
-                //                 age: 23,
-                //                 role: "user"
-                //             },
-                //             {
-                //                 name: "ammar",
-                //                 age: 23,
-                //                 role: "admin"
-                //             },
-                //         ]
-                //     }
-                // }
-            },
-        }),
-        // mutation: new GraphQLObjectType({
-        //     // Every Object should have name and Object of fields
-        //     name: 'RootMutatuiomType',
-        //     fields: {
-        //         //Here all Quiries
-        //         hello: {
-        //             // Type Like string or boolen or object BUT in graphql types
-        //             type: GraphQLString,
-        //             resolve() {
-        //                 //Logic here
-        //                 return 'world';
-        //             },
-        //         },
-
-        //         age: {
-        //             type: GraphQLInt,
-        //             resolve() {
-        //                 return 10
-        //             }
-        //         }
-        //     },
-        // }),
-        // Mustation for update and delete and create
-        // Subscription
-    });
 
     app.all(
         "/graphql",
-        createHandler({ schema })
+        createHandler({ schema:schema })
     );
 
 
