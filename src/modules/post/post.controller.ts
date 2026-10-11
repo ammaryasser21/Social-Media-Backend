@@ -15,7 +15,7 @@ import {
 import postService from "./post.service";
 
 import { UserHydrated } from "../../db/models/user.model";
-import { IUpdatePostBody, IUpdatePostFiles } from "./post.dto";
+import { IUpdatePostBody } from "./post.dto";
 
 
 // ======================================================
@@ -34,7 +34,7 @@ export const createPost = async (
 
         const files = (req.files as Express.Multer.File[]) ?? [];
 
-        const post = await postService.createPost(
+        const post = await postService.create(
             req.body,
             files,
             req.user as UserHydrated
@@ -67,7 +67,7 @@ export const findPost = async (
         const { postId } = req.params;
 
         if (!postId) throw new BadRequestResponse("Post id not found");
-        const post = await postService.findPost(
+        const post = await postService.find(
             req.query,
             req.user as UserHydrated
         );
@@ -98,7 +98,7 @@ export const updatePost = async (
         const postId = req.params.id;
 
         if (!postId) throw new BadRequestResponse("Post id not found");
-        const post = await postService.updatePost(
+        const post = await postService.update(
             postId as string,
             req.body as IUpdatePostBody,
             req.files as Express.Multer.File[],
@@ -131,7 +131,7 @@ export const reactPost = async (
         const postId = req.params.id;
 
         if (!postId) throw new BadRequestResponse("Post id not found");
-        const post = await postService.reactPost(
+        const post = await postService.react(
             postId as string,
             req.user as UserHydrated
         );                          

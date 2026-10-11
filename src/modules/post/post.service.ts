@@ -39,7 +39,7 @@ class PostService {
     // CREATE POST
     // ======================================================
 
-    async createPost(
+    async create(
         data: ICreatePost,
         files: Express.Multer.File[] = [],
         user: UserHydrated
@@ -133,7 +133,7 @@ class PostService {
     // FIND POST
     // ======================================================
 
-    async findPost(
+    async find(
         filter: PaginationQuery,
         user: UserHydrated,
     ) {
@@ -190,7 +190,7 @@ class PostService {
     // UPDATE POST
     // ======================================================
 
-    async updatePost(
+    async update(
         postId: string,
         body: IUpdatePostBody,
         files: Express.Multer.File[],
@@ -312,7 +312,7 @@ class PostService {
         return updatedPost;
     }
 
-    async reactPost(
+    async react(
         postId: string,
         user: UserHydrated
     ) {
