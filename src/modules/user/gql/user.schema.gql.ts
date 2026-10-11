@@ -1,7 +1,20 @@
-import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
-import { userGQLResponse } from "./user.types";
+import { 
+    GraphQLEnumType, 
+    GraphQLInt, 
+    GraphQLList, 
+    GraphQLNonNull, 
+    GraphQLObjectType, 
+    GraphQLString 
+} from "graphql";
+import { 
+    userGQLResponse, 
+    usersGQLResponse 
+} from "./user.types";
 import userResolver from "./user.resolver";
-import { userArgs } from "./user.args";
+import { 
+    userArgs, 
+    usersArgs 
+} from "./user.args";
 
 class UserSchema {
 
@@ -12,60 +25,23 @@ class UserSchema {
 
     reqisterQuery() {
         return {
-            getUser: {
-                type: new GraphQLList(
-                    new GraphQLObjectType({
-                        name: "UserInfo",
-                        fields: {
-                            name: { type: new GraphQLNonNull(GraphQLString) },
-                            age: { type: GraphQLInt },
-                            role: {
-                                type: new GraphQLEnumType({
-                                    name: "userRole",
-                                    values: {
-                                        ADMIN: {
-                                            value: "admin"
-                                        },
-                                        USER: {
-                                            value: "user"
-                                        },
-                                    }
-
-                                }),
-                            }
-                        }
-                    }),
-                ),
-                resolve() {
-                    return [
-                        {
-                            name: "ammar",
-                            age: 23,
-                            role: "user"
-                        },
-                        {
-                            name: "ammar",
-                            age: 23,
-                            role: "admin"
-                        },
-                    ]
-                }
+            getUsers: {
+                type: usersGQLResponse,
+                args:usersArgs,
+                resolve:this.userResolver.getUsers
             },
 
-            sayHi: {
+            getUser: {
                 type: userGQLResponse,
                 args:userArgs ,
-                resolver:this.userResolver.sayHi
+                resolver:this.userResolver.getUser
             },
         }
     }
 
     registerMutation() {
         return {
-            hello: {
-                type: GraphQLString,
-                resolve:this.userResolver.hello
-            },
+
         }
     }
 }

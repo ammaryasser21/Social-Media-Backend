@@ -3,8 +3,7 @@ class UserResolver {
 
     }
 
-
-    sayHi(
+    getUser(
         parent: any,
         args: {
             name: string,
@@ -18,9 +17,20 @@ class UserResolver {
         };
     }
 
-    hello() {
-        return 'world';
+        getUsers(
+        parent: any,
+        args: {
+            users: {
+            name: string;
+            age: number;
+            role:string
+        }[];
+        },
+        context: any
+    ) {
+        return args.users;
     }
+
 }
 
 const userResolver = new UserResolver();

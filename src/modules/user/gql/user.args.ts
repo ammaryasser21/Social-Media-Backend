@@ -1,12 +1,17 @@
-import { GraphQLInt, GraphQLNonNull, GraphQLString } from "graphql";
+import { GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { userGQLResponse } from "./user.types";
 
 export const userArgs = {
     name: {
         type: new GraphQLNonNull(GraphQLString),
-        // defaultValue:"UserName"
     },
     age: {
         type: new GraphQLNonNull(GraphQLInt),
-        // defaultValue:"UserName"
     },
 }
+
+export const usersArgs = {
+    users: {
+        type: new GraphQLList(userGQLResponse),
+    },
+};
