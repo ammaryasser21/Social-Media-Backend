@@ -1,3 +1,4 @@
+import { GraphQLError } from "graphql";
 import StatusCodes from "../enums/status.js";
 
 abstract class ApplicationException extends Error {
@@ -61,4 +62,14 @@ export class ForbiddenResponse extends ApplicationException {
             cause
         );
     }
+}
+
+
+export const MapGQLError = (err: ApplicationException) => {
+    throw new GraphQLError(err.message || "Internal Server Error", {
+        extensions: {
+            status: err.statusCode,
+            cause: err.cause
+        }
+    })
 }

@@ -20,6 +20,7 @@ import { UserRepository } from "../../db/repo/user.repository";
 import { PaginationQuery } from '../../common/utils/general-validate-schema';
 import { AvailableEnum } from '../../common/enums/available';
 import { Types } from 'mongoose';
+import { MapGQLError } from '../../common/response/error-response';
 
 
 class PostService {
@@ -33,6 +34,12 @@ class PostService {
         this.userRepo = new UserRepository();
         this.redisService = redisService;
         this.notificationService = notificationService;
+    }
+
+
+
+    findAll(filter: PaginationQuery){
+        MapGQLError(new BadRequestResponse("Invalid data"))
     }
 
     // ======================================================
