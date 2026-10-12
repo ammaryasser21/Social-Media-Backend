@@ -1,5 +1,4 @@
-import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
-import { postGQLResponse, postsGQLResponse } from "./post.types";
+import { postsGQLResponse } from "./post.types";
 import postResolver from "./post.resolver";
 import { postArgs } from "./post.args";
 

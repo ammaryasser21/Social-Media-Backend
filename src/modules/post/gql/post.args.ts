@@ -1,4 +1,7 @@
-import { GraphQLInt, GraphQLNonNull, GraphQLString } from "graphql";
+import { 
+    GraphQLInt, 
+    GraphQLString 
+} from "graphql";
 
 export const postArgs = {
     limit: {
