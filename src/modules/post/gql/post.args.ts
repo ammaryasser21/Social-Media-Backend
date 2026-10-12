@@ -1,7 +1,8 @@
-import { 
-    GraphQLInt, 
-    GraphQLString 
+import {
+    GraphQLInt,
+    GraphQLString
 } from "graphql";
+import z from "zod";
 
 export const postArgs = {
     limit: {
@@ -14,3 +15,22 @@ export const postArgs = {
         type: GraphQLString
     }
 }
+
+export const paginationSchema = z.strictObject({
+    limit: z
+    .coerce
+    .number()
+    .optional()
+    .default(10),
+
+    page: z
+    .coerce
+    .number()
+    .optional()
+    .default(1),
+
+    search: z
+    .coerce
+    .string()
+    .optional()
+})

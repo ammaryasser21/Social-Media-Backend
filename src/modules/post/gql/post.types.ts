@@ -8,6 +8,8 @@ import {
     GraphQLString,
 } from "graphql";
 import { AvailableEnum } from "../../../common/enums/available";
+import { UserHydrated } from "../../../db/models/user.model";
+import { TokenPayload } from "../../../common/interfaces/token.interface";
 
 export const availableGQLEnum = new GraphQLEnumType({
     name: "AvailableEnum",
@@ -62,3 +64,16 @@ export const postGQLResponse = new GraphQLObjectType({
 });
 
 export const postsGQLResponse = new GraphQLList(postGQLResponse);
+
+export type IGetPostsArgs = {
+
+    limit: number,
+    page: number,
+    search: string
+
+}
+
+export type IGetPostsContext = {
+    user: UserHydrated,
+    payload: TokenPayload
+}

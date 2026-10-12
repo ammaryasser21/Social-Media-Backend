@@ -1,18 +1,17 @@
-import { UserHydrated } from './../../../db/models/user.model';
-import { tokenTypes } from "../../../common/enums/token";
-import { NotFoundResponse, UnauthorizedResponse } from "../../../common/response";
-import { redisService } from "../../../common/services/redis.service";
-import { tokenService } from "../../../common/services/token.service";
 import { PostRepository } from "../../../db/repo/post.repository";
 import { UserRepository } from "../../../db/repo/user.repository";
 import postService from "../post.service";
-import { TokenPayload } from '../../../common/interfaces/token.interface';
+import { GQLValidation } from '../../../middleware/validation.middlware';
+import { paginationSchema } from './post.args';
+import { 
+    IGetPostsArgs, 
+    IGetPostsContext 
+} from './post.types';
 
 class PostResolver {
     private postService;
     private postRepo;
     private userRepo;
-    
 
     constructor() {
         this.postService = postService;
@@ -23,17 +22,12 @@ class PostResolver {
 
     async getPost(
         parent: any,
-        args: {
-            limit: number,
-            page: number,
-            search: string
-        },
-        context:{
-            user:UserHydrated,
-            payload:TokenPayload
-        }
+        args: IGetPostsArgs,
+        context: IGetPostsContext
     ) {
-        const user=context.user;
+        const user = context.user;
+
+        await GQLValidation(paginationSchema,args)
 
         const posts = await this.postRepo.paginate({
             limit: args.limit || 10,

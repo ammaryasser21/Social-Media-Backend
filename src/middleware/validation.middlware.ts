@@ -1,11 +1,15 @@
 import { NextFunction, Request, Response } from "express"
-import { BadRequestResponse } from "../common/response";
-import { keyof, ZodError, ZodType } from "zod";
+import { BadRequestResponse, ErrorResponse } from "../common/response";
+import {
+    ZodError,
+    ZodType
+} from "zod";
+import { GraphQLError } from "graphql";
 
-type keyRequestType = keyof Request;//"body"|"params"|....
+type keyRequestType = keyof Request;
 export type schemaType = Partial<Record<keyRequestType, ZodType>>;
 type IssueType = {
-    path: (string | number|symbol)[];
+    path: (string | number | symbol)[];
     message: string;
 };
 
@@ -13,6 +17,7 @@ type IssuesType = {
     key: keyRequestType;
     issues: IssueType[];
 };
+
 export const validation = (schema: schemaType) => {
     return (req: Request, res: Response, next: NextFunction) => {
         const issues: IssuesType[] = [];
@@ -45,3 +50,23 @@ export const validation = (schema: schemaType) => {
         next();
     }
 }
+
+export const GQLValidation = <T>(schema: ZodType, args: T) => {
+
+    const result = schema?.safeParse(args);
+    const errors = result.error as ZodError;
+    if (!result?.success) {
+       throw new GraphQLError("validation error",{
+        extensions:{
+            cause:errors.issues.map((err)=>{
+                return {
+                    path:err.path,
+                    message:err.message
+                }
+            })
+        }
+       })
+    }
+
+}
+
