@@ -73,7 +73,11 @@ export type IGetPostsArgs = {
 
 }
 
-export type IGetPostsContext = {
+export type IReactPostsArgs = {
+    postId: string
+}
+
+export type IPostsContext = {
     user: UserHydrated,
     payload: TokenPayload
 }

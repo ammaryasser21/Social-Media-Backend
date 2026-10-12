@@ -1,6 +1,12 @@
-import { postsGQLResponse } from "./post.types";
+import { 
+    postGQLResponse, 
+    postsGQLResponse 
+} from "./post.types";
 import postResolver from "./post.resolver";
-import { postArgs } from "./post.args";
+import { 
+    postArgs, 
+    reactPostArgs 
+} from "./post.args";
 
 class PostSchema {
 
@@ -22,6 +28,11 @@ class PostSchema {
 
     registerMutation() {
         return {
+            reactPosts:{
+                type:postGQLResponse,
+                args:reactPostArgs,
+                resolver:this.postResolver.reactPost
+            }
 
         }
     }

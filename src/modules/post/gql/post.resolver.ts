@@ -2,10 +2,11 @@ import { PostRepository } from "../../../db/repo/post.repository";
 import { UserRepository } from "../../../db/repo/user.repository";
 import postService from "../post.service";
 import { GQLValidation } from '../../../middleware/validation.middlware';
-import { paginationSchema } from './post.args';
+import { paginationSchema, reactPostArgs, reactPostSchema } from './post.args';
 import { 
     IGetPostsArgs, 
-    IGetPostsContext 
+    IPostsContext,
+    IReactPostsArgs
 } from './post.types';
 
 class PostResolver {
@@ -23,7 +24,7 @@ class PostResolver {
     async getPost(
         parent: any,
         args: IGetPostsArgs,
-        context: IGetPostsContext
+        context: IPostsContext
     ) {
         const user = context.user;
 
@@ -36,6 +37,24 @@ class PostResolver {
                 user
             }
         })
+
+        return posts;
+    }
+
+
+        async reactPost(
+        parent: any,
+        args: IReactPostsArgs,
+        context: IPostsContext
+    ) {
+        const user = context.user;
+
+        await GQLValidation(reactPostSchema,args)
+
+        const posts = await this.postService.react(
+            args.postId,
+            user
+        );
 
         return posts;
     }
