@@ -7,7 +7,7 @@ import {
 } from "../common/response";
 import { tokenTypes } from "../common/enums/token";
 import { tokenService } from "../common/services/token.service";
-import { UserRepositry } from "../db/repo/user.repository";
+import { UserRepository } from "../db/repo/user.repository";
 import { redisService } from "../common/services/redis.service";
 
 export const auth = async (
@@ -15,7 +15,7 @@ export const auth = async (
     res: Response,
     next: NextFunction
 ) => {
-    const userRepo = new UserRepositry();
+    const userRepo = new UserRepository();
 
     const authHeader = req.headers.authorization;
 
