@@ -15,6 +15,7 @@ import { redisService } from "./common/services/redis.service";
 import { createHandler } from "graphql-http/lib/use/express";
 import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from "graphql";
 import schema from './modules/gql/schema.gql';
+import { auth } from './middleware/auth.middlware';
 const bootstrap = async () => {
 
     config({
@@ -90,7 +91,14 @@ const bootstrap = async () => {
 
     app.all(
         "/graphql",
-        createHandler({ schema:schema })
+        auth,
+        createHandler({
+            schema: schema,
+            context: (req) => ({
+                user:req.raw.user,
+                payload:req.raw.payload
+            }),
+        })
     );
 
 
