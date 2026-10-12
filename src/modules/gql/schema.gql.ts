@@ -1,9 +1,6 @@
 import {
-    GraphQLInt,
-    GraphQLNonNull,
     GraphQLObjectType,
     GraphQLSchema,
-    GraphQLString
 } from "graphql";
 import userSchema from "../user/gql/user.schema.gql";
 import postSchema from "../post/gql/post.schema.gql";
