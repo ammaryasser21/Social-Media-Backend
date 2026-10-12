@@ -17,14 +17,14 @@ class UserResolver {
         };
     }
 
-        getUsers(
+    getUsers(
         parent: any,
         args: {
             users: {
-            name: string;
-            age: number;
-            role:string
-        }[];
+                name: string;
+                age: number;
+                role: string
+            }[];
         },
         context: any
     ) {

@@ -1,4 +1,10 @@
-import { GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { 
+    GraphQLInt, 
+    GraphQLList, 
+    GraphQLNonNull, 
+    GraphQLObjectType, 
+    GraphQLString 
+} from "graphql";
 import { userGQLResponse } from "./user.types";
 
 export const userArgs = {

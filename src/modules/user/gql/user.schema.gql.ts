@@ -1,12 +1,4 @@
 import { 
-    GraphQLEnumType, 
-    GraphQLInt, 
-    GraphQLList, 
-    GraphQLNonNull, 
-    GraphQLObjectType, 
-    GraphQLString 
-} from "graphql";
-import { 
     userGQLResponse, 
     usersGQLResponse 
 } from "./user.types";

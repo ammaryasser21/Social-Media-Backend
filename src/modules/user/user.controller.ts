@@ -1,14 +1,20 @@
-import { IUploadFiles } from './../../common/interfaces/s3.interface';
-import { NextFunction, Request, Response, Router } from "express";
+import { 
+    NextFunction, 
+    Request, 
+    Response 
+} from "express";
 import StatusCodes from "../../common/enums/status";
 import userService from "./user.service";
-import { BadRequestResponse, successResponse, UnauthorizedResponse } from "../../common/response";
+import { 
+    BadRequestResponse, 
+    successResponse, 
+    UnauthorizedResponse 
+} from "../../common/response";
 import { decrypt } from "../../common/utils/security/encrypt";
 import { UserHydrated } from "../../db/models/user.model";
 import { MIME_TYPES } from "../../common/enums/multer";
 import { pipeline } from "node:stream/promises";
 import s3Service from "../../common/services/s3.service";
-import { string } from 'zod';
 
 // ======================================================
 // GET CURRENT USER
@@ -28,7 +34,9 @@ export const getUser = async (
             status: StatusCodes.SUCCESS.OK,
             data: {
                 ...req.user,
-                phone: req.user.phone ? decrypt(req.user.phone) : req.user.phone
+                phone: req.user.phone ? 
+                decrypt(req.user.phone) : 
+                req.user.phone
             }
         });
     } catch (error) {

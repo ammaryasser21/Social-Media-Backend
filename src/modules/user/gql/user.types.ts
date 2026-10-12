@@ -1,4 +1,11 @@
-import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { 
+    GraphQLEnumType, 
+    GraphQLInt, 
+    GraphQLList, 
+    GraphQLNonNull, 
+    GraphQLObjectType, 
+    GraphQLString 
+} from "graphql";
 
 export const userGQLResponse = new GraphQLObjectType({
     name: "userGQLResponse",
@@ -12,6 +19,17 @@ export const userGQLResponse = new GraphQLObjectType({
     }
 })
 
+const usersAvailableEnum = new GraphQLEnumType({
+    name: "userRole",
+    values: {
+        ADMIN: {
+            value: "admin"
+        },
+        USER: {
+            value: "user"
+        },
+    },
+});
 
 export const usersGQLResponse = new GraphQLList(
     new GraphQLObjectType({
@@ -19,21 +37,7 @@ export const usersGQLResponse = new GraphQLList(
         fields: {
             name: { type: new GraphQLNonNull(GraphQLString) },
             age: { type: GraphQLInt },
-            role: {
-                type: new GraphQLEnumType({
-                    name: "userRole",
-                    values: {
-                        ADMIN: {
-                            value: "admin"
-                        },
-                        USER: {
-                            value: "user"
-                        },
-                    },
-
-
-                }),
-            }
+            role: { type: usersAvailableEnum }
         }
     }),
 )
