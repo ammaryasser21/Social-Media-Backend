@@ -1,5 +1,9 @@
-import { AnyUpload } from './common/interfaces/multer.interface';
-import express, { Express, NextFunction, Request, Response } from "express";
+import express, {
+    Express,
+    NextFunction,
+    Request,
+    Response
+} from "express";
 // import "dotenv/config";
 import { config } from "dotenv";
 import cors from "cors";
@@ -13,31 +17,26 @@ import { limiter } from "./middleware";
 import DBconnection from "./db/connection";
 import { redisService } from "./common/services/redis.service";
 import { createHandler } from "graphql-http/lib/use/express";
-import { GraphQLEnumType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from "graphql";
 import schema from './modules/gql/schema.gql';
 import { auth } from './middleware/auth.middlware';
+import { Server } from "socket.io"
 const bootstrap = async () => {
 
     config({
         path: ".env"
     })
 
-
     await DBconnection();
     await redisService.connection();
 
     const app: Express = express();
 
-
     app.use(express.json());
 
-    //This will add header x-forword-for in my req this header give me ip for the device
     const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
     app.set("trust proxy", trustProxyHops);
 
     app.use(limiter);
-
-
 
     app.use(
         cors({
@@ -85,18 +84,14 @@ const bootstrap = async () => {
     );
 
 
-
-
-
-
     app.all(
         "/graphql",
         auth,
         createHandler({
             schema: schema,
             context: (req) => ({
-                user:req.raw.user,
-                payload:req.raw.payload
+                user: req.raw.user,
+                payload: req.raw.payload
             }),
         })
     );
@@ -104,10 +99,62 @@ const bootstrap = async () => {
 
     app.use(globalErrorHandler);
 
-    app.listen(Number(process.env.PORT) || 3000, () => {
-        console.log("server is runing");
+    const httpServer = app.listen(Number(process.env.PORT) || 3000, () => {
+        console.log("server is runing ....");
     })
 
+    const io = new Server(httpServer,{
+        cors:{
+            origin:"*"
+        }
+    });
+
+
+    let socketIds=[];
+    io.of("/admin").on("connection", (socket) => {
+        //Every soket connection has unique id
+        console.log({ socket: socket.id });
+
+        socketIds.push(socket.id);
+
+        //Receive
+        socket.on("sayHi", (data, cb) => {
+
+            //recived data / message
+            console.log({ data });
+
+            //Hand shake - Receive sign
+            cb("Got message");
+
+            //send to spacific user that associated with socket 
+            socket.emit("sayHi", `Hello ${socket.id}`);
+
+            //send to spacific user
+            io.to(socket.id).emit("response", `Hello ${socket.id}`);
+
+            //send to list of users
+            io.to(socketIds.slice(0,1)).emit("response",`Hello ${socketIds.join(" - ")}`);
+
+            //send to all users
+            io.emit("response","Hello All");
+
+            //send to all with excluding user associated with soket
+            socket.broadcast.emit("response",`Hello All exept ${socket.id}`);
+
+            //send to all with excluding spacific user
+            io.except(socket.id).emit("response",`Hello All expet ${socket.id}`);
+
+            //send to all with excluding spacific List of users
+            io.except(socketIds.slice(0,1)).emit("response",`Hello All expet ${socketIds.slice(0,1).join(" - ")}`);
+
+        })
+
+        socket.on("disconnect",(data)=>{
+            console.log({data});
+        })
+    })
+
+    console.log("app is runing ....");
 }
 
 export default bootstrap;

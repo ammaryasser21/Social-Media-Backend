@@ -41,7 +41,7 @@ class RedisService {
 
     try {
       await this.redisClient.connect();
-      console.log("Redis connected successfully...");
+      console.log("Redis connected successfully ....");
     } catch (error) {
       console.error("Redis connection error:", error);
       throw new ErrorResponse(

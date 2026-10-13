@@ -43,6 +43,7 @@
     "multer": "^2.4.0",
     "nodemailer": "^10.0.10",
     "redis": "^6.2.1",
+    "socket.io": "^4.8.4",
     "zod": "^4.6.5"
   },
   "overrides": {

@@ -11,7 +11,7 @@ async function DBconnection(): Promise<void> {
         serverSelectionTimeoutMS: 5000,
     });
 
-    console.log("Mongo connected successfully...");
+    console.log("Mongo connected successfully ....");
 }
 
 export default DBconnection;
