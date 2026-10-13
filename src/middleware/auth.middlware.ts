@@ -7,15 +7,15 @@ import {
 } from "../common/response";
 import { tokenTypes } from "../common/enums/token";
 import { tokenService } from "../common/services/token.service";
-import { UserRepository } from "../db/repo/user.repository";
+import { userRepo } from "../db/repo/user.repository";
 import { redisService } from "../common/services/redis.service";
+import { Socket } from "socket.io";
 
 export const auth = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const userRepo = new UserRepository();
 
     const authHeader = req.headers.authorization;
 
@@ -76,6 +76,77 @@ export const auth = async (
 
     next();
 };
+
+
+export const socketAuthMiddleware = async (
+    socket: Socket,
+    next: (err?: Error) => void
+) => {
+    try {
+        const authHeader =
+            socket.handshake.auth.authorization ??
+            socket.handshake.headers.authorization;
+
+        if (typeof authHeader !== "string" || !authHeader) {
+            throw new UnauthorizedResponse(
+                "Access Token is required"
+            );
+        }
+
+        const [scheme, accessToken] = authHeader.split(" ");
+
+        if (scheme !== "Bearer" || !accessToken) {
+            throw new UnauthorizedResponse(
+                "Authorization header must be: Bearer <token>"
+            );
+        }
+
+        const decoded = await tokenService.decodeToken(
+            accessToken,
+            tokenTypes.ACCESS
+        );
+
+        const { id, jti, iat } = decoded;
+
+        if (!id || !jti || !iat) {
+            throw new UnauthorizedResponse(
+                "Invalid access token"
+            );
+        }
+
+        const tokenExists = await redisService.getToken({
+            userId: id,
+            tokenSigniture: jti,
+        });
+
+        if (tokenExists) {
+            throw new UnauthorizedResponse(
+                "Please login again"
+            );
+        }
+
+        const user = await userRepo.findOne({
+            filter: { _id: id },
+        });
+
+        if (!user) {
+            throw new NotFoundResponse("User not found");
+        }
+
+        // Make the authenticated user available to every event handler.
+        socket.data.user = user;
+
+        next();
+    } catch (error) {
+
+        next(
+            error instanceof Error
+                ? error
+                : new Error("Socket authentication failed")
+        );
+    }
+};
+
 
 export const authorize = (...roles: Roles[]) => {
     return (

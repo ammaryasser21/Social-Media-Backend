@@ -339,6 +339,38 @@ class RedisService {
     )
   }
 
+  SocketKey = (user_id: string): string => {
+    return `SOCKET::${user_id}`;
+  }
+
+  setSocket = async (
+    user_id: string,
+    socket_id: string
+  ) => {
+    return await this.redisClient.sAdd(
+      this.SocketKey(user_id),
+      socket_id
+    )
+  }
+
+  getSocket = async (
+    user_id: string
+  ) => {
+    return await this.redisClient.sMembers(
+      this.SocketKey(user_id)
+    )
+  }
+
+  deleteSocket = async (
+    user_id: string,
+    socket_id: string
+  ) => {
+    return await this.redisClient.sRem(
+      this.SocketKey(user_id),
+      socket_id
+    )
+  }
+
 }
 
 

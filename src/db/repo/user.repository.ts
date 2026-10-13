@@ -6,3 +6,5 @@ export class UserRepository extends BaseRepository<IUser> {
         super(User, "User");
     }
 }
+
+export const userRepo = new UserRepository();
