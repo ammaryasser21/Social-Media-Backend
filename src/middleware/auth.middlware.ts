@@ -53,6 +53,11 @@ export const auth = async (
 
     const user = await userRepo.findOne({
         filter: { _id: id },
+        projection:{},
+        options:{
+            populate:"friends",
+            lean:false
+        }
     });
 
     if (!user) {
