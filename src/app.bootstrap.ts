@@ -20,6 +20,7 @@ import { createHandler } from "graphql-http/lib/use/express";
 import schema from './modules/gql/schema.gql';
 import { auth, socketAuthMiddleware } from './middleware/auth.middlware';
 import { Server } from "socket.io"
+import { realTimeGateway } from "./modules/realtime/realtime.gateway";
 const bootstrap = async () => {
 
     config({
@@ -103,60 +104,7 @@ const bootstrap = async () => {
         console.log("server is runing ....");
     })
 
-    const io = new Server(httpServer, {
-        cors: {
-            origin: "*"
-        }
-    });
-
-    const adminNamespace = io.of("/admin");
-    adminNamespace.use(socketAuthMiddleware);
-
-    // let socketIds=[];
-    adminNamespace.on("connection", async (socket) => {
-        const user = socket.data.user;
-
-        // socketIds.push(socket.id);
-
-        await redisService.setSocket(user.id, socket.id);
-        //Receive
-        socket.on("sayHi", (data, cb) => {
-
-            //recived data / message
-            console.log({ data });
-
-            //Hand shake - Receive sign
-            //cb("Got message");
-
-            //send to spacific user that associated with socket 
-            //socket.emit("sayHi", `Hello ${socket.id}`);
-
-            //send to spacific user
-            //io.to(socket.id).emit("response", `Hello ${socket.id}`);
-
-            //send to list of users
-            //io.to(socketIds.slice(0,1)).emit("response",`Hello ${socketIds.join(" - ")}`);
-
-            //send to all users
-            //io.emit("response","Hello All");
-
-            //send to all with excluding user associated with soket
-            //socket.broadcast.emit("response",`Hello All exept ${socket.id}`);
-
-            //send to all with excluding spacific user
-            //io.except(socket.id).emit("response",`Hello All expet ${socket.id}`);
-
-            //send to all with excluding spacific List of users
-            //io.except(socketIds.slice(0,1)).emit("response",`Hello All expet ${socketIds.slice(0,1).join(" - ")}`);
-
-        })
-
-        socket.on("disconnect", async (data) => {
-            console.log({ data });
-
-            await redisService.deleteSocket(user.id, socket.id);
-        })
-    })
+    realTimeGateway.initialize(httpServer);
 
     console.log("app is runing ....");
 }
