@@ -18,3 +18,9 @@ export const sendMessageSchema=z.strictObject({
     content:z.string,
     sendTo:objectIdSchema
 })
+
+
+export const sendGroupMessageSchema=z.strictObject({
+    content:z.string,
+    groupId:objectIdSchema
+})

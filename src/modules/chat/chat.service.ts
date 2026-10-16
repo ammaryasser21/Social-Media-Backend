@@ -68,6 +68,23 @@ class ChatService {
         });
     };
 
+    getGroupChatByRoomId = async (
+        roomId: string
+    ) => {
+
+        return await this.chatRepo.findOneChat({
+            filter: {
+                room_id: roomId
+
+            },
+            projection: {},
+            options: {
+                lean: false,
+                populate: "participants"
+            }
+        });
+    };
+
 
     sendMessage = async (
         data: { content: string; sendTo: string },
@@ -112,6 +129,34 @@ class ChatService {
 
     }
 
+
+    sendGroupMessage = async (
+        data: { content: string; groupId: string },
+        user: UserHydrated,
+    ) => {
+        const { content, groupId } = data;
+        let chat = await this.chatRepo.findOneAndUpdate({
+            filter: {
+                _id: groupId,
+                type: ChatTypeEnum.OneVersesMany
+            },
+            update: {
+                $addToSet: {
+                    messages: {
+                        content: content,
+                        createdBy: user._id,
+                    },
+                }
+            },
+            options: {
+                new: true
+            }
+        })
+
+        if (!chat) throw new BadRequestResponse("Group not found");
+        return chat;
+
+    }
 
     createGroup = async (
         data: {
@@ -163,7 +208,7 @@ class ChatService {
 
         return await this.chatRepo.findOneChat({
             filter: {
-                _id:groupId
+                _id: groupId
 
             },
             projection: {},

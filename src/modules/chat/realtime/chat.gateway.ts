@@ -10,6 +10,7 @@ class ChatGateway {
     registerEvents(socket: Socket,io:Server) {
         this.chatEvent.sayHi(socket);
         this.chatEvent.sendMessage(socket,io);
+        this.chatEvent.sendGroupMessage(socket,io);
     }
 }
 
