@@ -1,14 +1,14 @@
-import { 
-    NextFunction, 
-    Request, 
-    Response 
+import {
+    NextFunction,
+    Request,
+    Response
 } from "express";
 import StatusCodes from "../../common/enums/status";
 import userService from "./user.service";
-import { 
-    BadRequestResponse, 
-    successResponse, 
-    UnauthorizedResponse 
+import {
+    BadRequestResponse,
+    successResponse,
+    UnauthorizedResponse
 } from "../../common/response";
 import { decrypt } from "../../common/utils/security/encrypt";
 import { UserHydrated } from "../../db/models/user.model";
@@ -29,14 +29,19 @@ export const getUser = async (
         if (!req.user) {
             throw new UnauthorizedResponse("Authentication required");
         }
+
+        const data = await userService.getUser(req.user as UserHydrated);
         return successResponse({
             res,
             status: StatusCodes.SUCCESS.OK,
             data: {
-                ...req.user,
-                phone: req.user.phone ? 
-                decrypt(req.user.phone) : 
-                req.user.phone
+                user: {
+                    ...data.user,
+                    phone: data.user.phone ?
+                        decrypt(data.user.phone) :
+                        data.user.phone
+                },
+                groups: data.groups
             }
         });
     } catch (error) {

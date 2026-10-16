@@ -1,48 +1,28 @@
 import { Router } from "express";
-
-import {
-    createChat,
-} from "./chat.controller";
-
-import {
-    MIME_TYPES,
-    STORAGE_TYPES,
-    UPLOAD_WAY,
-} from "../../common/enums/multer";
-
+import { auth } from "../../middleware/auth.middlware";
+import { getUserChat, createGroup,getGroup } from "./chat.controller";
 import { validation } from "../../middleware";
 
-import cloudUpload from "../../common/utils/cloud-multer";
 
-import {
-    createChatSchema,
-} from "./chat.validation";
-
-import { auth } from "../../middleware/auth.middlware";
-
-const chatRouter = Router();
+const chatRouter = Router({
+    mergeParams:true
+});
 
 chatRouter.use(auth);
-
-
 // ======================================================
-// CREATE CHAT
+// CREATE POST
 // ======================================================
-
-chatRouter.post(
+chatRouter.get(
     "/",
-    cloudUpload({
-        storageType: STORAGE_TYPES.DISK,
-        folder: "chats",
-        fileValidation: MIME_TYPES.IMAGE,
-        upload: {
-            way: UPLOAD_WAY.ARRAY,
-            fieldName: "attachments",
-            maxCount: 10,
-        },
-    }),
-    validation(createChatSchema),
-    createChat
+    getUserChat
 );
 
+chatRouter.post(
+    "/group",
+    createGroup
+);
+chatRouter.get(
+    "/group/:groupId",
+    getGroup
+);
 export default chatRouter;

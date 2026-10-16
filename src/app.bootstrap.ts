@@ -7,7 +7,7 @@ import express, {
 // import "dotenv/config";
 import { config } from "dotenv";
 import cors from "cors";
-import { authRouter, postRouter } from "./modules";
+import { authRouter, chatRouter, postRouter } from "./modules";
 import { userRouter } from "./modules";
 import { globalErrorHandler } from "./middleware";
 import { successResponse } from "./common/response";
@@ -82,6 +82,10 @@ const bootstrap = async () => {
     app.use(
         "/post",
         postRouter
+    );
+    app.use(
+        "/chat",
+        chatRouter
     );
 
 

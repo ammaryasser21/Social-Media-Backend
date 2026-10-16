@@ -1,27 +1,44 @@
-import { 
-    IGetFile, 
-    IUploadFiles, 
-    IUploadLargeFile, 
-    IUploadPresignedFile 
+import {
+    IGetFile,
+    IUploadFiles,
+    IUploadLargeFile,
+    IUploadPresignedFile
 } from "../../common/interfaces/s3.interface";
 
-import { 
-    BadRequestResponse, 
-    ErrorResponse, 
-    NotFoundResponse 
+import {
+    BadRequestResponse,
+    ErrorResponse,
+    NotFoundResponse
 } from "../../common/response";
 import s3Service from "../../common/services/s3.service";
 import { UserHydrated } from "../../db/models/user.model";
 import { UserRepository } from "../../db/repo/user.repository";
 import StatusCodes from "../../common/enums/status";
+import { ChatRepository } from "../../db/repo/chat.repository";
+import { decrypt } from "../../common/utils/security/encrypt";
+import { IChat } from "../../common/interfaces/chat.interface";
+import { Types } from "mongoose";
 
 class UserService {
     private userRepo: UserRepository;
     private s3Service;
+    private chatRepo: ChatRepository
 
     constructor() {
         this.userRepo = new UserRepository();
+        this.chatRepo = new ChatRepository();
         this.s3Service = s3Service;
+    }
+
+    async getUser(user: UserHydrated): Promise<{user:UserHydrated,groups:IChat[]}> {
+        const groups = await this.chatRepo.find({
+            filter: {
+                participants: {
+                    $in: [new Types.ObjectId(user._id)],
+                },
+            },
+        });
+        return {user,groups};
     }
 
     async updateUserImg(

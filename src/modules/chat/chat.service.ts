@@ -10,12 +10,12 @@ import s3Service from "../../common/services/s3.service";
 import { ChatRepository } from "../../db/repo/chat.repository";
 import { UserHydrated } from "../../db/models/user.model";
 
-import {
-    ICreateChat
-} from "./chat.dto";
 
-import { IChat } from "../../common/interfaces/chat.interface";
+import { ChatTypeEnum, IChat } from "../../common/interfaces/chat.interface";
 import { UserRepository } from "../../db/repo/user.repository";
+import { Types } from 'mongoose';
+import { ChatHydrated } from '../../db/models/chat.model';
+import { randomUUID } from 'node:crypto';
 
 
 class ChatService {
@@ -35,95 +35,146 @@ class ChatService {
     // CREATE CHAT
     // ======================================================
 
-    async create(
-        data: ICreateChat,
-        files: Express.Multer.File[] = [],
+    getUserChat = async (
+        query: {
+            page: number,
+            size: number
+        },
+        userId: string,
         user: UserHydrated
-    ) {
+    ) => {
+        const {
+            page,
+            size
+        } = query;
 
-        if (!data.content && !files.length) {
-            throw new BadRequestResponse(
-                "Chat must contain content or attachments"
-            );
-        }
-        const tags = data.tags || [];
-
-
-        let attachments: string[] = [];
-        let FCM_Tokens_mentions: string[] = [];
-
-        if (tags?.length) {
-
-            const users = await this.userRepo.find({
-                filter: {
-                    _id: {
-                        $in: tags,
-                    },
+        return await this.chatRepo.findOneChat({
+            filter: {
+                participants: {
+                    $all: [
+                        userId,
+                        user._id.toString()
+                    ],
                 },
-                projection: {
-                    select: "_id",
 
-                }
-            });
-
-            if (!users.length) throw new NotFoundResponse("Users not founded");
-
-            const tokenResults = await Promise.all(
-                tags.map(tag => this.redisService.getFCMToken(String(tag)))
-            );
-
-            FCM_Tokens_mentions.push(
-                ...tokenResults.flat()
-            );
-        }
-
-        if (files.length) {
-            attachments = await s3Service.uploadFiles({
-                files,
-                folder: "chats",
-                path: String(user._id),
-            });
-
-        }
-
-        const chatData: IChat = {
-            content: data?.content || "",
-            tags: tags,
-            available: data?.available,
-            attachments,
-            createdBy: user._id,
-        };
-
-        const chat = await this.chatRepo.create({
-            data: chatData,
+            },
+            projection: {},
+            options: {
+                lean: false,
+                populate: "participants"
+            },
+            page,
+            size
         });
+    };
 
-        if (!chat && attachments.length) {
 
-            await s3Service.deleteFiles({
-                files: attachments,
+    sendMessage = async (
+        data: { content: string; sendTo: string },
+        user: UserHydrated,
+    ) => {
+        const { content, sendTo } = data;
+        let chat = await this.chatRepo.findOneAndUpdate({
+            filter: {
+                participants: {
+                    $all: [sendTo, user._id],
+                },
+            },
+            update: {
+                $addToSet: {
+                    messages: {
+                        content: content,
+                        createdBy: user._id,
+                    },
+                }
+            },
+            options: {
+                new: true
+            }
+        })
+
+        if (!chat) {
+            chat = await this.chatRepo.create({
+                data: {
+                    participants: [
+                        new Types.ObjectId(sendTo),
+                        user._id,
+                    ],
+                    createdBy: user._id,
+                    type: ChatTypeEnum.OneVersesOne,
+                    messages: [{
+                        content: content,
+                        createdBy: user._id,
+                    }],
+                },
             });
-            throw new BadRequestResponse("Chat not created");
-
         }
 
-
-        if (FCM_Tokens_mentions.length) {
-            await Promise.allSettled(
-                FCM_Tokens_mentions.map((token) =>
-                    this.notificationService.sendNotification({
-                        token,
-                        title: `Chat Created`,
-                        data: `${user.first_name} mentioned for you on his chat`
-                    })
-                )
-            );
-
-        }
-
-        return chat;
     }
 
+
+    createGroup = async (
+        data: {
+            group_name: string;
+            participants: Types.ObjectId[];
+        },
+        user: UserHydrated,
+    ) => {
+        const users = await this.userRepo.find({
+            filter: {
+                _id: {
+                    $in: data.participants.map(e => new Types.ObjectId(e))
+                },
+                friends: {
+                    $in: [new Types.ObjectId(user._id)],
+                },
+
+            },
+        });
+
+
+        if (users.length != data.participants.length) throw new BadRequestResponse("users not found");
+
+        let roomId = randomUUID();
+        const chat = await this.chatRepo.create({
+            data: {
+                participants: [...data.participants.map((e) => new Types.ObjectId(e)), user._id],
+                group_name: data.group_name,
+                room_id: roomId,
+                messages: [],
+                type: ChatTypeEnum.OneVersesMany,
+            }
+        });
+
+        return chat;
+    };
+
+    getGroupChat = async (
+        query: {
+            page: number,
+            size: number
+        },
+        groupId: string
+    ) => {
+        const {
+            page,
+            size
+        } = query;
+
+        return await this.chatRepo.findOneChat({
+            filter: {
+                _id:groupId
+
+            },
+            projection: {},
+            options: {
+                lean: false,
+                populate: "participants"
+            },
+            page,
+            size
+        });
+    };
 }
 
 

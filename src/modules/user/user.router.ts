@@ -22,6 +22,11 @@ import cloudUpload from "../../common/utils/cloud-multer";
 
 const userRouter = Router();
 
+userRouter.use(
+    "/:userId/chats", 
+    userRouter
+);
+
 userRouter.get("/profile",
     getUser
 );

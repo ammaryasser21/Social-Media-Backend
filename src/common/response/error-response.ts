@@ -73,3 +73,23 @@ export const MapGQLError = (err: ApplicationException) => {
         }
     })
 }
+
+
+
+export class SocketErrorResponse extends ApplicationException {
+public details?: unknown;
+public code: string;
+
+constructor(
+    message: string,
+    statusCode: number = StatusCodes.CLIENT_ERROR.BAD_REQUEST,
+    details?: unknown,
+    code: string = "BAD_REQUEST"
+) {
+    super(message, statusCode);
+
+    this.details = details;
+    this.code = code;
+}
+
+}

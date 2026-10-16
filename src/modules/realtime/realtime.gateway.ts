@@ -6,16 +6,19 @@ import { NotFoundResponse, UnauthorizedResponse } from '../../common/response';
 import { tokenService } from '../../common/services/token.service';
 import { tokenTypes } from '../../common/enums/token';
 import { userRepo } from '../../db/repo/user.repository';
+import chatGateway from '../chat/realtime/chat.gateway';
 
 class RealTimeGateway {
     private redisService;
     private tokenService;
     private userRepo;
+    private chatGateway;
     private io!: Server;
     constructor() {
         this.redisService = redisService;
         this.tokenService = tokenService;
         this.userRepo = userRepo;
+        this.chatGateway = chatGateway
     }
 
     private socketAuthMiddleware = async (
@@ -94,54 +97,22 @@ class RealTimeGateway {
             }
         });
 
-        const adminNamespace = this.io.of("/admin");
-        adminNamespace.use(this.socketAuthMiddleware);
+        const puplicNamespace = this.io.of("/");
+        puplicNamespace.use(this.socketAuthMiddleware);
 
-        // let socketIds=[];
-        adminNamespace.on("connection", async (socket) => {
+        puplicNamespace.on("connection", async (socket) => {
             const user = socket.data.user;
 
-            // socketIds.push(socket.id);
-
             await this.redisService.setSocket(user.id, socket.id);
-            //Receive
-            socket.on("sayHi", (data, cb) => {
-
-                //recived data / message
-                console.log({ data });
-
-                //Hand shake - Receive sign
-                //cb("Got message");
-
-                //send to spacific user that associated with socket 
-                //socket.emit("sayHi", `Hello ${socket.id}`);
-
-                //send to spacific user
-                //io.to(socket.id).emit("response", `Hello ${socket.id}`);
-
-                //send to list of users
-                //io.to(socketIds.slice(0,1)).emit("response",`Hello ${socketIds.join(" - ")}`);
-
-                //send to all users
-                //io.emit("response","Hello All");
-
-                //send to all with excluding user associated with soket
-                //socket.broadcast.emit("response",`Hello All exept ${socket.id}`);
-
-                //send to all with excluding spacific user
-                //io.except(socket.id).emit("response",`Hello All expet ${socket.id}`);
-
-                //send to all with excluding spacific List of users
-                //io.except(socketIds.slice(0,1)).emit("response",`Hello All expet ${socketIds.slice(0,1).join(" - ")}`);
-
-            })
+            await this.chatGateway.registerEvents(socket,this.io);
 
             socket.on("disconnect", async (data) => {
-                console.log({ data });
-
                 await this.redisService.deleteSocket(user.id, socket.id);
             })
         })
+
+
+
 
     }
 }
