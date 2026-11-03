@@ -127,7 +127,7 @@ class S3Service {
         const uploadOptions = {
             Bucket: bucket,
             Key: `social_media/${folder}/${path}/${randomUUID()}-${fileName}`,
-            contentType: contentType
+            ContentType: contentType
         }
 
         const command = new PutObjectCommand(uploadOptions);
