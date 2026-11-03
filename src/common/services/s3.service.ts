@@ -45,7 +45,7 @@ class S3Service {
         if (!command.input.Key) throw new BadRequestResponse("Failed to upload");
 
         const result = await this.client.send(command);
-        if (result.ETag) throw new BadRequestResponse("Failed to upload");
+        if (!result.ETag) throw new BadRequestResponse("Failed to upload");
 
         return command.input.Key;
     }
